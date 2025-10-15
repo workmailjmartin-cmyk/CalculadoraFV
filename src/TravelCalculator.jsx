@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass } from 'lucide-react';
+import logo from './assets/logo.png';
 
 const TravelCalculator = () => {
   const [mode, setMode] = useState(null);
@@ -15,6 +16,8 @@ const TravelCalculator = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [userType, setUserType] = useState(null);
   const [selectedUserType, setSelectedUserType] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const PASSWORDS = {
     agencia: 'felizviaje2025',
@@ -30,6 +33,7 @@ const TravelCalculator = () => {
     { id: 'cars', name: 'Autos', icon: Car },
     { id: 'packages', name: 'Paquetes/Circuitos', icon: Package },
     { id: 'excursions', name: 'Excursiones', icon: Compass },
+    { id: 'buspackages', name: 'Paquetes en Bus', icon: Package, quickOnly: true, agenciaOnly: true },
   ];
 
   const providers = {
@@ -41,6 +45,7 @@ const TravelCalculator = () => {
     cars: ['BookingCars', 'Hoteldo'],
     packages: ['Ola', 'Julia'],
     excursions: ['Hoteldo', 'Feliz Viaje'],
+    buspackages: ['360 Regional', 'KMB', 'RolSol', 'Balloon', 'Astros', 'TuViaje'],
   };
 
   const formatNumber = (num) => {
@@ -101,7 +106,10 @@ const TravelCalculator = () => {
       profitRate = customRate ? parseFloat(customRate) / 100 : 0;
     } else if (service === 'excursions') {
       profitRate = 0.185;
-    }
+    } else if (service === 'buspackages') {
+      const rates = { '360 Regional': 0.085, 'KMB': 0.035, 'RolSol': 0.12, 'Balloon': 0.12, 'Astros': 0.12, 'TuViaje': 0.085 };
+    profitRate = rates[provider] || 0;
+    } 
 
     if (service !== 'cars' || provider !== 'BookingCars') {
       profit = final * profitRate;
@@ -249,6 +257,13 @@ const TravelCalculator = () => {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative' }}>
         <div style={{ maxWidth: '40rem', width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '3rem' }}>
+            <img 
+              src={logo} 
+              alt="Feliz Viaje" 
+              style={{ height: '120px', width: 'auto', maxWidth: '100%' }}
+            />
+          </div>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '3rem', textAlign: 'center' }}>Calculadora</h2>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '32rem', margin: '0 auto' }}>
@@ -343,19 +358,45 @@ const TravelCalculator = () => {
             ← Volver
           </button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+            <img 
+              src={logo} 
+              alt="Feliz Viaje" 
+              style={{ height: '80px', width: 'auto', maxWidth: '100%' }}
+            />
+          </div>
             <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.5rem', textAlign: 'center' }}>
               {selectedUserType === 'agencia' ? 'Acceso Agencia' : 'Acceso Freelancer'}
             </h2>
             <p style={{ color: '#BDBFC1', marginBottom: '2rem', textAlign: 'center' }}>Ingresa la contraseña para continuar</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                onKeyPress={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                placeholder="Contraseña"
-                style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', boxSizing: 'border-box' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onKeyPress={(e) => { if (e.key === 'Enter') handleLogin(); }}
+                  placeholder="Contrasena"
+                  style={{ width: '100%', padding: '1rem 1.25rem', paddingRight: '3rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', boxSizing: 'border-box' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#BDBFC1',
+                    padding: '0.5rem'
+                  }}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
               <button onClick={handleLogin} style={{ width: '100%', background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer' }}>
                 Ingresar
               </button>
@@ -496,14 +537,12 @@ const TravelCalculator = () => {
               Salir
             </button>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '3rem' }}>
-            <div style={{ width: '250px', height: '120px', backgroundColor: '#f3f4f6', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg viewBox="0 0 200 80" style={{ width: '220px', height: '110px' }}>
-                <text x="10" y="45" style={{ fontSize: '35px', fontWeight: 'bold', fill: '#11173d', fontFamily: 'Arial' }}>Feliz</text>
-                <text x="45" y="70" style={{ fontSize: '24px', fontWeight: 'bold', fill: '#11173d', fontFamily: 'Arial' }}>viaje</text>
-                <path d="M 50 72 Q 110 80 150 65" stroke="#ef5a1a" strokeWidth="4" fill="none"/>
-              </svg>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+            <img 
+              src={logo} 
+              alt="Feliz Viaje" 
+              style={{ height: '120px', width: 'auto', maxWidth: '100%' }}
+            />
           </div>
           <h1 style={{ fontSize: '3rem', fontWeight: 'bold', color: '#11173d', marginBottom: '4rem', textAlign: 'center' }}>Calculadora de Servicios</h1>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '64rem', margin: '0 auto' }}>
@@ -511,14 +550,14 @@ const TravelCalculator = () => {
               <div style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', width: '5rem', height: '5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                 <FileText color="white" size={36} />
               </div>
-              <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1rem' }}>Crear Presupuesto</h2>
+              <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1rem' }}>Paquete de Servicios</h2>
               <p style={{ color: '#BDBFC1', lineHeight: '1.625', fontSize: '1.125rem' }}>Crear presupuesto con varios servicios</p>
             </div>
             <div onClick={() => setMode('quick')} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ef5a1a'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#f3f4f6'; }}>
               <div style={{ background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', width: '5rem', height: '5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                 <Calculator color="white" size={36} />
               </div>
-              <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1rem' }}>Cálculo Rápido</h2>
+              <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1rem' }}>Servicio Individual</h2>
               <p style={{ color: '#BDBFC1', lineHeight: '1.625', fontSize: '1.125rem' }}>Calcular servicio individual</p>
             </div>
           </div>
@@ -742,13 +781,15 @@ const TravelCalculator = () => {
         <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2.5rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem', textAlign: 'center' }}>{services.find(s => s.id === selectedService)?.name}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Moneda</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <button onClick={() => setCurrency('USD')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'USD' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'USD' ? 'white' : '#11173d' }}>USD ($)</button>
-                <button onClick={() => setCurrency('ARS')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'ARS' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'ARS' ? 'white' : '#11173d' }}>ARS ($)</button>
+            {selectedService !== 'buspackages' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Moneda</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <button onClick={() => setCurrency('USD')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'USD' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'USD' ? 'white' : '#11173d' }}>USD ($)</button>
+                  <button onClick={() => setCurrency('ARS')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'ARS' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'ARS' ? 'white' : '#11173d' }}>ARS ($)</button>
+                </div>
               </div>
-            </div>
+            )}
             {userType === 'agencia' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
@@ -762,12 +803,7 @@ const TravelCalculator = () => {
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Monto Base</label>
               <input type="text" value={formData.amount || ''} onChange={handleAmountChange} placeholder="0,00" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
             </div>
-            {selectedService === 'cruises' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Rentabilidad (%)</label>
-                <input type="number" value={formData.customRate || ''} onChange={(e) => setFormData({ ...formData, customRate: e.target.value })} placeholder="0" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
-              </div>
-            )}
+           
             <button onClick={handleAddService} disabled={!formData.amount || (userType === 'agencia' && !formData.provider)} style={{ width: '100%', background: (formData.amount && (userType === 'freelancer' || formData.provider)) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', color: 'white', padding: '1.25rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: (formData.amount && (userType === 'freelancer' || formData.provider)) ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
               <Plus size={20} />
               {mode === 'budget' ? 'Agregar al Presupuesto' : 'Calcular'}
