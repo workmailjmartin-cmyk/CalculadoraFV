@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass } from 'lucide-react';
-import logo from './assets/logo.jpg';
+import logo from "./assets/logo.jpg";
 
 const TravelCalculator = () => {
   const [mode, setMode] = useState(null);
