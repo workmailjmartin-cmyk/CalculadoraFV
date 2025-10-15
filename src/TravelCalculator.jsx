@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass } from 'lucide-react';
-import logo from './assets/logo.png';
+<img src="/logo.jpg" alt="Logo" />
 
 const TravelCalculator = () => {
   const [mode, setMode] = useState(null);
@@ -17,7 +17,6 @@ const TravelCalculator = () => {
   const [userType, setUserType] = useState(null);
   const [selectedUserType, setSelectedUserType] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-
 
   const PASSWORDS = {
     agencia: 'felizviaje2025',
