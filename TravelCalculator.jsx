@@ -18,7 +18,6 @@ const TravelCalculator = () => {
   const [selectedUserType, setSelectedUserType] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
-
   const PASSWORDS = {
     agencia: 'felizviaje2025',
     freelancer: 'freelancer2025'
