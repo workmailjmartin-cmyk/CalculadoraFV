@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass } from 'lucide-react';
-<img src="/logo.jpg" alt="Logo" />
+import logo from "./assets/logo.jpg";
+
+
 
 const TravelCalculator = () => {
   const [mode, setMode] = useState(null);
@@ -102,7 +104,9 @@ const TravelCalculator = () => {
       const rates = { 'Ola': 0.085, 'Julia': 0.09 };
       profitRate = rates[provider] || 0;
     } else if (service === 'cruises') {
-      profitRate = customRate ? parseFloat(customRate) / 100 : 0;
+      profitRate = 0.035;
+      profit = base * profitRate;
+      final = base + profit;
     } else if (service === 'excursions') {
       profitRate = 0.185;
     } else if (service === 'buspackages') {
@@ -195,6 +199,11 @@ const TravelCalculator = () => {
     setBudgets(updatedBudgets);
     setCurrentBudget(null);
     setMode(null);
+  };
+
+  const handleDeleteService = (serviceId) => {
+    const updatedServices = currentBudget.services.filter(s => s.id !== serviceId);
+    setCurrentBudget({ ...currentBudget, services: updatedServices });
   };
 
   const handleDeleteBudget = (budgetId) => {
@@ -706,14 +715,39 @@ const TravelCalculator = () => {
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Servicios del Presupuesto</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {currentBudget.services.map(service => (
-                    <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.75rem' }}>
+                    <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', backgroundColor: 'rgba(86, 221, 224, 0.15)', borderRadius: '0.75rem', border: '1px solid rgba(86, 221, 224, 0.3)' }}>
                       <div>
                         <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
                         {userType === 'agencia' && <p style={{ color: '#BDBFC1' }}>{service.provider}</p>}
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.25rem' }}>{formatCurrency(service.final, service.currency)}</p>
-                        <p style={{ fontSize: '0.75rem', color: '#BDBFC1' }}>Base: {formatCurrency(service.base, service.currency)}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.25rem' }}>{formatCurrency(service.final, service.currency)}</p>
+                          <p style={{ fontSize: '0.75rem', color: '#BDBFC1' }}>Base: {formatCurrency(service.base, service.currency)}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteService(service.id)} 
+                          style={{ 
+                            background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: '0.5rem', 
+                            padding: '0.5rem', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            transition: 'all 0.3s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -783,16 +817,31 @@ const TravelCalculator = () => {
             {selectedService !== 'buspackages' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Moneda</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <button onClick={() => setCurrency('USD')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'USD' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'USD' ? 'white' : '#11173d' }}>USD ($)</button>
-                  <button onClick={() => setCurrency('ARS')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'ARS' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'ARS' ? 'white' : '#11173d' }}>ARS ($)</button>
-                </div>
+                {selectedService === 'assistance' && formData.provider === 'AssisCard' ? (
+                  <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>
+                    USD ($) - AssisCard solo acepta dólares
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <button onClick={() => setCurrency('USD')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'USD' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'USD' ? 'white' : '#11173d' }}>USD ($)</button>
+                    <button onClick={() => setCurrency('ARS')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'ARS' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'ARS' ? 'white' : '#11173d' }}>ARS ($)</button>
+                  </div>
+                )}
               </div>
             )}
-            {userType === 'agencia' && (
+             {userType === 'agencia' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
-                <select value={formData.provider || ''} onChange={(e) => setFormData({ ...formData, provider: e.target.value })} style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}>
+                <select 
+                  value={formData.provider || ''} 
+                  onChange={(e) => {
+                    setFormData({ ...formData, provider: e.target.value });
+                    if (selectedService === 'assistance' && e.target.value === 'AssisCard') {
+                      setCurrency('USD');
+                    }
+                  }} 
+                  style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}
+                >
                   <option value="">Seleccionar...</option>
                   {providers[selectedService]?.map(provider => <option key={provider} value={provider}>{provider}</option>)}
                 </select>
