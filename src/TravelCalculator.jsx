@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass } from 'lucide-react';
+import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play } from 'lucide-react';
 import logo from "./assets/logo.jpg";
 
 
@@ -14,6 +14,7 @@ const TravelCalculator = () => {
   const [calculatedServices, setCalculatedServices] = useState([]);
   const [currency, setCurrency] = useState('USD');
   const [viewingBudget, setViewingBudget] = useState(null);
+  const [editingBudget, setEditingBudget] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginPassword, setLoginPassword] = useState('');
   const [userType, setUserType] = useState(null);
@@ -39,10 +40,10 @@ const TravelCalculator = () => {
 
   const providers = {
     flights: ['Hoteldo', 'Ola', 'Turbo'],
-    hotels: ['Feliz Viaje', 'Hoteldo', 'OlaClick'],
+    hotels: ['Feliz Viaje', 'Hoteldo', 'OlaClick', 'RolSol'],
     cruises: ['Costa', 'MSC'],
     assistance: ['Hoteldo', 'AssisCard'],
-    transfers: ['Hoteldo', 'Feliz Viaje'],
+    transfers: ['Hoteldo', 'Feliz Viaje', 'RolSol', 'Ola'],
     cars: ['BookingCars', 'Hoteldo'],
     packages: ['Ola', 'Julia'],
     excursions: ['Hoteldo', 'Feliz Viaje'],
@@ -77,14 +78,22 @@ const TravelCalculator = () => {
     setFormData({ ...formData, amount: formatted });
   };
 
-  const calculatePrice = (service, provider, amount, customRate) => {
+  const calculatePrice = (service, provider, amount, customRate, flightType, calculationMode) => {
     let final = parseFloat(amount);
     let profitRate = 0;
     let profit = 0;
     let base = parseFloat(amount);
 
     if (service === 'flights') {
-      profitRate = 0.185;
+      if (calculationMode === 'quick' && flightType) {
+        if (flightType === 'internacional') {
+          profitRate = 0.12;
+        } else if (flightType === 'nacional') {
+          profitRate = 0.15;
+        }
+      } else {
+        profitRate = 0.185;
+      }
     } else if (service === 'hotels') {
       profitRate = 0.185;
     } else if (service === 'assistance') {
@@ -92,14 +101,14 @@ const TravelCalculator = () => {
     } else if (service === 'transfers') {
       profitRate = 0.185;
     } else if (service === 'cars') {
-    if (provider === 'BookingCars') {
-      base = parseFloat(amount) * 0.88;
-      final = parseFloat(amount);
-      profit = final - base;
-      profitRate = 0.12;
-    } else {
-      profitRate = 0.185;
-    }
+      if (provider === 'BookingCars') {
+        base = parseFloat(amount) * 0.88;
+        final = parseFloat(amount);
+        profit = final - base;
+        profitRate = 0.12;
+      } else {
+        profitRate = 0.185;
+      }
     } else if (service === 'packages') {
       const rates = { 'Ola': 0.085, 'Julia': 0.09 };
       profitRate = rates[provider] || 0;
@@ -111,12 +120,14 @@ const TravelCalculator = () => {
       profitRate = 0.185;
     } else if (service === 'buspackages') {
       const rates = { '360 Regional': 0.085, 'KMB': 0.035, 'RolSol': 0.12, 'Balloon': 0.12, 'Astros': 0.12, 'TuViaje': 0.085 };
-    profitRate = rates[provider] || 0;
+      profitRate = rates[provider] || 0;
     } 
 
     if (service !== 'cars' || provider !== 'BookingCars') {
-      profit = final * profitRate;
-      final = final + profit;
+      if (service !== 'cruises') {
+        profit = final * profitRate;
+        final = final + profit;
+      }
     }
 
     return { base: base, profit: profit, final: final, profitRate: profitRate };
@@ -136,6 +147,11 @@ const TravelCalculator = () => {
     
     if (!formData.amount) return;
     if (userType === 'agencia' && !providerToUse) return;
+    
+    if (mode === 'quick' && selectedService === 'flights' && !formData.flightType) {
+      alert('Debes seleccionar si el vuelo es Nacional o Internacional');
+      return;
+    }
 
     if (mode === 'budget') {
       const serviceCount = currentBudget.services.filter(s => s.type === selectedService).length;
@@ -150,7 +166,7 @@ const TravelCalculator = () => {
     }
 
     const numericAmount = parseFormattedNumber(formData.amount);
-    const calculation = calculatePrice(selectedService, providerToUse, numericAmount, formData.customRate);
+    const calculation = calculatePrice(selectedService, providerToUse, numericAmount, formData.customRate, formData.flightType, mode);
     const serviceData = {
       id: Date.now(),
       type: selectedService,
@@ -161,6 +177,8 @@ const TravelCalculator = () => {
       profit: calculation.profit,
       final: calculation.final,
       profitRate: calculation.profitRate,
+      flightType: formData.flightType,
+      isActive: true,
     };
 
     if (mode === 'budget') {
@@ -194,9 +212,15 @@ const TravelCalculator = () => {
   };
 
   const handleSaveBudget = () => {
-    let updatedBudgets = [...budgets, currentBudget];
-    if (updatedBudgets.length > 3) updatedBudgets = updatedBudgets.slice(-3);
-    setBudgets(updatedBudgets);
+    if (editingBudget) {
+      const updatedBudgets = budgets.map(b => b.id === currentBudget.id ? currentBudget : b);
+      setBudgets(updatedBudgets);
+      setEditingBudget(null);
+    } else {
+      let updatedBudgets = [...budgets, currentBudget];
+      if (updatedBudgets.length > 3) updatedBudgets = updatedBudgets.slice(-3);
+      setBudgets(updatedBudgets);
+    }
     setCurrentBudget(null);
     setMode(null);
   };
@@ -206,22 +230,45 @@ const TravelCalculator = () => {
     setCurrentBudget({ ...currentBudget, services: updatedServices });
   };
 
+  const handleToggleService = (serviceId) => {
+    const updatedServices = currentBudget.services.map(s => 
+      s.id === serviceId ? { ...s, isActive: !s.isActive } : s
+    );
+    setCurrentBudget({ ...currentBudget, services: updatedServices });
+  };
+
   const handleDeleteBudget = (budgetId) => {
     setBudgets(budgets.filter(b => b.id !== budgetId));
   };
 
+  const handleEditBudget = (budget) => {
+    setEditingBudget(budget);
+    setCurrentBudget({ ...budget });
+    setMode('budget');
+  };
+
   const getSummary = () => {
     if (!currentBudget || currentBudget.services.length === 0) return null;
-    const servicesByType = {};
-    currentBudget.services.forEach(service => { servicesByType[service.type] = service; });
-    const summary = Object.values(servicesByType);
-    const totalBaseUSD = summary.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
-    const totalProfitUSD = summary.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
-    const totalFinalUSD = summary.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.final, 0);
-    const totalBaseARS = summary.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.base, 0);
-    const totalProfitARS = summary.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
-    const totalFinalARS = summary.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
-    return { summary, totalBaseUSD, totalProfitUSD, totalFinalUSD, totalBaseARS, totalProfitARS, totalFinalARS, hasUSD: totalBaseUSD > 0, hasARS: totalBaseARS > 0 };
+    
+    const activeServices = currentBudget.services.filter(s => s.isActive !== false);
+    
+    const totalBaseUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
+    const totalProfitUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
+    const totalFinalUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.final, 0);
+    const totalBaseARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.base, 0);
+    const totalProfitARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
+    const totalFinalARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
+    
+    return { 
+      totalBaseUSD, 
+      totalProfitUSD, 
+      totalFinalUSD, 
+      totalBaseARS, 
+      totalProfitARS, 
+      totalFinalARS, 
+      hasUSD: totalBaseUSD > 0, 
+      hasARS: totalBaseARS > 0 
+    };
   };
 
   const resetAll = () => {
@@ -232,6 +279,7 @@ const TravelCalculator = () => {
     setCalculatedServices([]);
     setCurrency('USD');
     setViewingBudget(null);
+    setEditingBudget(null);
   };
 
   const handleLogout = () => {
@@ -245,6 +293,7 @@ const TravelCalculator = () => {
     setCalculatedServices([]);
     setCurrency('USD');
     setViewingBudget(null);
+    setEditingBudget(null);
     setBudgets([]);
   };
 
@@ -352,7 +401,7 @@ const TravelCalculator = () => {
             onClick={() => setSelectedUserType(null)}
             style={{
               marginBottom: '1rem',
-              color: '#BDBFC1',
+              color: '#6b7280',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -384,7 +433,7 @@ const TravelCalculator = () => {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   onKeyPress={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                  placeholder="Contrasena"
+                  placeholder="Contraseña"
                   style={{ width: '100%', padding: '1rem 1.25rem', paddingRight: '3rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', boxSizing: 'border-box' }}
                 />
                 <button
@@ -419,22 +468,20 @@ const TravelCalculator = () => {
   }
 
   if (viewingBudget) {
-    const servicesByType = {};
-    viewingBudget.services.forEach(service => { servicesByType[service.type] = service; });
-    const summary = Object.values(servicesByType);
-    const totalBaseUSD = summary.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
-    const totalProfitUSD = summary.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
-    const totalFinalUSD = summary.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.final, 0);
-    const totalBaseARS = summary.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.base, 0);
-    const totalProfitARS = summary.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
-    const totalFinalARS = summary.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
+    const activeServices = viewingBudget.services.filter(s => s.isActive !== false);
+    const totalBaseUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
+    const totalProfitUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
+    const totalFinalUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.final, 0);
+    const totalBaseARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.base, 0);
+    const totalProfitARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
+    const totalFinalARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
     const hasUSD = totalBaseUSD > 0;
     const hasARS = totalBaseARS > 0;
 
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
-          <button onClick={() => setViewingBudget(null)} style={{ marginBottom: '2rem', color: '#BDBFC1', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
+          <button onClick={() => setViewingBudget(null)} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h3 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d' }}>{viewingBudget.name}</h3>
             <p style={{ color: '#BDBFC1' }}>{viewingBudget.date}</p>
@@ -448,6 +495,11 @@ const TravelCalculator = () => {
                     <div>
                       <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
                       {userType === 'agencia' && <p style={{ color: '#BDBFC1' }}>{service.provider}</p>}
+                      {service.type === 'flights' && service.flightType && (
+                        <p style={{ color: '#56DDE0', fontSize: '0.875rem', fontWeight: '600' }}>
+                          {service.flightType === 'nacional' ? 'Vuelo Nacional' : 'Vuelo Internacional'}
+                        </p>
+                      )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.25rem' }}>{formatCurrency(service.final, service.currency)}</p>
@@ -583,11 +635,14 @@ const TravelCalculator = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{ textAlign: 'right' }}>
                         <p style={{ fontSize: '0.875rem', color: '#BDBFC1' }}>Total</p>
-                        <p style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#ef5a1a' }}>${formatNumber(budget.services.reduce((sum, s) => sum + s.final, 0))}</p>
+                        <p style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#ef5a1a' }}>${formatNumber(budget.services.filter(s => s.isActive !== false).reduce((sum, s) => sum + s.final, 0))}</p>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <button onClick={() => setViewingBudget(budget)} style={{ background: 'linear-gradient(135deg, #56DDE0 0%, #4cc9d4 100%)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Eye size={20} />
+                        </button>
+                        <button onClick={() => handleEditBudget(budget)} style={{ background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Edit size={20} />
                         </button>
                         <button onClick={() => handleDeleteBudget(budget.id)} style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Trash2 size={20} />
@@ -611,7 +666,7 @@ const TravelCalculator = () => {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
-          <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#BDBFC1', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
+          <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2.5rem', textAlign: 'center' }}>Nuevo Presupuesto</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -632,7 +687,7 @@ const TravelCalculator = () => {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
-          <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#BDBFC1', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Home size={20} /> Inicio
           </button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
@@ -646,6 +701,14 @@ const TravelCalculator = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Proveedor:</span>
                   <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.provider}</span>
+                </div>
+              )}
+              {service.type === 'flights' && service.flightType && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Tipo de Vuelo:</span>
+                  <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
+                    {service.flightType === 'nacional' ? 'Nacional (15%)' : 'Internacional (12%)'}
+                  </span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
@@ -679,16 +742,21 @@ const TravelCalculator = () => {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
-          <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#BDBFC1', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
+          <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           {mode === 'budget' && (
             <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-              <div style={{ display: 'inline-block', background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)', padding: '1rem 2.5rem', borderRadius: '1rem', border: '2px solid #e5e7eb' }}>
-                <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', margin: '0' }}>{currentBudget.name}</h3>
+              <div style={{ display: 'inline-block', background: editingBudget ? 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)' : 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)', padding: '1rem 2.5rem', borderRadius: '1rem', border: editingBudget ? '2px solid #11173d' : '2px solid #e5e7eb' }}>
+                <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: editingBudget ? 'white' : '#11173d', margin: '0' }}>
+                  {currentBudget.name}
+                  {editingBudget && <span style={{ fontSize: '0.875rem', marginLeft: '0.75rem', opacity: 0.8 }}>(Editando)</span>}
+                </h3>
               </div>
               <p style={{ color: '#BDBFC1', marginTop: '0.75rem' }}>{currentBudget.services.length} servicios agregados</p>
             </div>
           )}
-          <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '3rem', textAlign: 'center' }}>{mode === 'budget' ? 'Agregar Servicio' : 'Seleccionar Servicio'}</h2>
+          <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '3rem', textAlign: 'center' }}>
+            {editingBudget ? 'Editar Presupuesto' : (mode === 'budget' ? 'Agregar Servicio' : 'Seleccionar Servicio')}
+          </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem', maxWidth: '64rem', margin: '0 auto 3rem' }}>
             {services.filter(service => {
               if (mode === 'quick') {
@@ -715,39 +783,69 @@ const TravelCalculator = () => {
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Servicios del Presupuesto</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {currentBudget.services.map(service => (
-                    <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', backgroundColor: 'rgba(86, 221, 224, 0.15)', borderRadius: '0.75rem', border: '1px solid rgba(86, 221, 224, 0.3)' }}>
+                    <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', backgroundColor: service.isActive === false ? 'rgba(156, 163, 175, 0.15)' : 'rgba(86, 221, 224, 0.15)', borderRadius: '0.75rem', border: service.isActive === false ? '1px solid rgba(156, 163, 175, 0.3)' : '1px solid rgba(86, 221, 224, 0.3)', opacity: service.isActive === false ? 0.6 : 1 }}>
                       <div>
                         <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
                         {userType === 'agencia' && <p style={{ color: '#BDBFC1' }}>{service.provider}</p>}
+                        {service.type === 'flights' && service.flightType && (
+                          <p style={{ color: '#56DDE0', fontSize: '0.875rem', fontWeight: '600' }}>
+                            {service.flightType === 'nacional' ? 'Vuelo Nacional' : 'Vuelo Internacional'}
+                          </p>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ textAlign: 'right' }}>
                           <p style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.25rem' }}>{formatCurrency(service.final, service.currency)}</p>
                           <p style={{ fontSize: '0.75rem', color: '#BDBFC1' }}>Base: {formatCurrency(service.base, service.currency)}</p>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteService(service.id)} 
-                          style={{ 
-                            background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', 
-                            color: 'white', 
-                            border: 'none', 
-                            borderRadius: '0.5rem', 
-                            padding: '0.5rem', 
-                            cursor: 'pointer', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            transition: 'all 0.3s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                          }}
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleToggleService(service.id)} 
+                            style={{ 
+                              background: service.isActive === false ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '0.5rem', 
+                              padding: '0.5rem', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                          >
+                            {service.isActive === false ? <Play size={18} /> : <Pause size={18} />}
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteService(service.id)} 
+                            style={{ 
+                              background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '0.5rem', 
+                              padding: '0.5rem', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -794,7 +892,9 @@ const TravelCalculator = () => {
                       </div>
                     </div>
                   )}
-                  <button onClick={handleSaveBudget} style={{ width: '100%', backgroundColor: 'white', color: '#ef5a1a', padding: '1.25rem', borderRadius: '1rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>Guardar Presupuesto</button>
+                  <button onClick={handleSaveBudget} style={{ width: '100%', backgroundColor: 'white', color: '#ef5a1a', padding: '1.25rem', borderRadius: '1rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>
+                    {editingBudget ? 'Guardar Cambios' : 'Guardar Presupuesto'}
+                  </button>
                 </div>
               )}
             </div>
@@ -810,7 +910,7 @@ const TravelCalculator = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
       <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
-        <button onClick={() => { setSelectedService(null); setFormData({}); }} style={{ marginBottom: '2rem', color: '#BDBFC1', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
+        <button onClick={() => { setSelectedService(null); setFormData({}); }} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
         <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2.5rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem', textAlign: 'center' }}>{services.find(s => s.id === selectedService)?.name}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -829,7 +929,7 @@ const TravelCalculator = () => {
                 )}
               </div>
             )}
-             {userType === 'agencia' && (
+            {userType === 'agencia' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
                 <select 
@@ -847,12 +947,83 @@ const TravelCalculator = () => {
                 </select>
               </div>
             )}
+            
+            {selectedService === 'flights' && mode === 'quick' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Tipo de Vuelo</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <button 
+                    onClick={() => setFormData({ ...formData, flightType: 'nacional' })} 
+                    style={{ 
+                      padding: '1rem', 
+                      borderRadius: '0.75rem', 
+                      fontWeight: 'bold', 
+                      fontSize: '1rem', 
+                      border: 'none', 
+                      cursor: 'pointer', 
+                      background: formData.flightType === 'nacional' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', 
+                      color: formData.flightType === 'nacional' ? 'white' : '#11173d',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <span>Nacional</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>15% rentabilidad</span>
+                  </button>
+                  <button 
+                    onClick={() => setFormData({ ...formData, flightType: 'internacional' })} 
+                    style={{ 
+                      padding: '1rem', 
+                      borderRadius: '0.75rem', 
+                      fontWeight: 'bold', 
+                      fontSize: '1rem', 
+                      border: 'none', 
+                      cursor: 'pointer', 
+                      background: formData.flightType === 'internacional' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', 
+                      color: formData.flightType === 'internacional' ? 'white' : '#11173d',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <span>Internacional</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>12% rentabilidad</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Monto Base</label>
               <input type="text" value={formData.amount || ''} onChange={handleAmountChange} placeholder="0,00" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
             </div>
            
-            <button onClick={handleAddService} disabled={!formData.amount || (userType === 'agencia' && !formData.provider)} style={{ width: '100%', background: (formData.amount && (userType === 'freelancer' || formData.provider)) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', color: 'white', padding: '1.25rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: (formData.amount && (userType === 'freelancer' || formData.provider)) ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+            <button 
+              onClick={handleAddService} 
+              disabled={
+                !formData.amount || 
+                (userType === 'agencia' && !formData.provider) ||
+                (mode === 'quick' && selectedService === 'flights' && !formData.flightType)
+              } 
+              style={{ 
+                width: '100%', 
+                background: (formData.amount && (userType === 'freelancer' || formData.provider) && (mode !== 'quick' || selectedService !== 'flights' || formData.flightType)) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', 
+                color: 'white', 
+                padding: '1.25rem', 
+                borderRadius: '0.75rem', 
+                fontWeight: 'bold', 
+                fontSize: '1.125rem', 
+                border: 'none', 
+                cursor: (formData.amount && (userType === 'freelancer' || formData.provider) && (mode !== 'quick' || selectedService !== 'flights' || formData.flightType)) ? 'pointer' : 'not-allowed', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '0.75rem' 
+              }}
+            >
               <Plus size={20} />
               {mode === 'budget' ? 'Agregar al Presupuesto' : 'Calcular'}
             </button>
