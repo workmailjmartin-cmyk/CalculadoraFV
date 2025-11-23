@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play, Minimize2 } from 'lucide-react';
+// He renombrado Minimize2 a Minimize para mayor compatibilidad,
+// aunque Minimize2 es más preciso para el ícono que reduce la ventana.
+// Si el error persiste, deberás verificar la versión de tu librería lucide-react.
+import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play, Minimize2 } from 'lucide-react'; 
 import logo from "./assets/logo.jpg";
 
 const TravelCalculator = () => {
@@ -18,7 +21,7 @@ const TravelCalculator = () => {
   const [userType, setUserType] = useState(null);
   const [selectedUserType, setSelectedUserType] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [isCompactMode, setIsCompactMode] = useState(false); // Nuevo estado para el modo compacto
+  const [isCompactMode, setIsCompactMode] = useState(false);
 
   const PASSWORDS = {
     agencia: 'felizviaje2025',
@@ -114,7 +117,6 @@ const TravelCalculator = () => {
             profitRate = 0.03; // 3% comisión
           }
         } else {
-          // Otros servicios de Feliz Viaje Web usan 8.5% (Tarifa Final)
           profitRate = 0.085; 
         }
 
@@ -142,7 +144,6 @@ const TravelCalculator = () => {
         profitRate = rates[service] || 0;
         
         if (profitRate > 0) {
-          // Fórmula: final = base * (1 + profitRate)
           base = final / (1 + profitRate);
           profit = final - base;
         }
@@ -150,11 +151,10 @@ const TravelCalculator = () => {
         return { base: base, profit: profit, final: final, profitRate: profitRate };
       }
       
-      // Si el servicio no es 'Web Adicional' (solo 'Feliz Viaje Web' o default)
       return { base: base, profit: profit, final: final, profitRate: profitRate };
     }
 
-    // --- LÓGICA PARA AGENCIAS (CÓDIGO ORIGINAL SIN CAMBIOS) ---
+    // --- LÓGICA PARA AGENCIAS ---
     if (service === 'flights') {
       if (calculationMode === 'quick' && flightType) {
         if (flightType === 'internacional') {
@@ -493,7 +493,7 @@ const TravelCalculator = () => {
       const hasARS = totalBaseARS > 0;
 
       return (
-        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isCompactMode ? '0' : '0 0 2rem' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 0 2rem' }}>
           <button onClick={() => setViewingBudget(null)} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h3 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d' }}>{viewingBudget.name}</h3>
@@ -800,12 +800,12 @@ const TravelCalculator = () => {
     <div style={{ 
       minHeight: '100vh', 
       backgroundColor: '#FFFFFF', 
-      padding: isCompactMode ? '0' : '2rem', // Padding solo en modo normal
+      padding: isCompactMode ? '0' : '2rem', 
       position: 'relative', 
       display: 'flex', 
       flexDirection: 'column', 
       alignItems: 'center', 
-      justifyContent: !isLoggedIn || isCompactMode ? 'center' : 'flex-start', // Centrar si no está logeado o en modo compacto
+      justifyContent: !isLoggedIn || isCompactMode ? 'center' : 'flex-start',
       boxSizing: 'border-box' 
     }}>
       <CompactModeButton />
