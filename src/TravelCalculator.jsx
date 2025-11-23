@@ -27,16 +27,19 @@ const TravelCalculator = () => {
   };
 
   const services = [
-    { id: 'flights', name: 'Vuelos', icon: Plane },
-    { id: 'hotels', name: 'Alojamiento', icon: Hotel },
-    { id: 'cruises', name: 'Cruceros', icon: Ship, quickOnly: true, agenciaOnly: true },
-    { id: 'assistance', name: 'Asistencia al Viajero', icon: Shield, agenciaOnly: true },
-    { id: 'transfers', name: 'Traslados', icon: MapPin },
-    { id: 'cars', name: 'Autos', icon: Car },
-    { id: 'packages', name: 'Paquetes/Circuitos', icon: Package },
-    { id: 'excursions', name: 'Excursiones', icon: Compass },
-    { id: 'buspackages', name: 'Paquetes en Bus', icon: Package, quickOnly: true, agenciaOnly: true },
-  ];
+  { id: 'flights', name: 'Vuelos', icon: Plane },
+  { id: 'hotels', name: 'Alojamiento', icon: Hotel },
+  { id: 'cruises', name: 'Cruceros', icon: Ship, quickOnly: true, agenciaOnly: true },
+  { id: 'assistance', name: 'Asistencia al Viajero', icon: Shield, agenciaOnly: true },
+  { id: 'transfers', name: 'Traslados', icon: MapPin },
+  { id: 'cars', name: 'Autos', icon: Car },
+  { id: 'packages', name: 'Paquetes/Circuitos', icon: Package },
+  { id: 'excursions', name: 'Excursiones', icon: Compass },
+  { id: 'buspackages', name: 'Paquetes en Bus', icon: Package, quickOnly: true, agenciaOnly: true },
+  { id: 'disney', name: 'Disney', icon: Home, freelancerOnly: true },
+  { id: 'universal', name: 'Universal', icon: MapPin, freelancerOnly: true }, 
+  { id: 'xcaret', name: 'Xcaret', icon: Compass, freelancerOnly: true },
+];
 
   const providers = {
     flights: ['Hoteldo', 'Ola', 'Turbo'],
@@ -49,6 +52,21 @@ const TravelCalculator = () => {
     excursions: ['Hoteldo', 'Feliz Viaje'],
     buspackages: ['360 Regional', 'KMB', 'RolSol', 'Balloon', 'Astros', 'TuViaje'],
   };
+
+  const providersFreelancer = {
+  flights: ['Feliz Viaje Web', 'Web Adicional'],
+  hotels: ['Feliz Viaje Web', 'Web Adicional'],
+  cruises: ['Web Adicional'],
+  assistance: ['Web Adicional'],
+  transfers: ['Feliz Viaje Web', 'Web Adicional'],
+  cars: ['Feliz Viaje Web', 'Web Adicional'],
+  packages: ['Feliz Viaje Web', 'Web Adicional'],
+  excursions: ['Feliz Viaje Web', 'Web Adicional'],
+  buspackages: ['Feliz Viaje Web', 'Web Adicional'],
+  disney: ['Web Adicional'],
+  universal: ['Web Adicional'],
+  xcaret: ['Web Adicional'],
+};
 
   const formatNumber = (num) => {
     const parts = num.toFixed(2).split('.');
@@ -78,60 +96,103 @@ const TravelCalculator = () => {
     setFormData({ ...formData, amount: formatted });
   };
 
-  const calculatePrice = (service, provider, amount, customRate, flightType, calculationMode) => {
-    let final = parseFloat(amount);
-    let profitRate = 0;
-    let profit = 0;
-    let base = parseFloat(amount);
+ const calculatePrice = (service, provider, amount, customRate, flightType, calculationMode) => {
+  let final = parseFloat(amount);
+  let profitRate = 0;
+  let profit = 0;
+  let base = parseFloat(amount);
 
-    if (service === 'flights') {
-      if (calculationMode === 'quick' && flightType) {
-        if (flightType === 'internacional') {
-          profitRate = 0.12;
-        } else if (flightType === 'nacional') {
-          profitRate = 0.15;
+  // LÓGICA PARA FREELANCERS
+  if (userType === 'freelancer') {
+    if (provider === 'Feliz Viaje Web') {
+      // Solo para vuelos
+      if (service === 'flights' && flightType) {
+        if (flightType === 'nacional') {
+          // Nacional: comisión 5%
+          base = final / 1.05;
+          profit = final - base;
+          profitRate = 0.05;
+        } else if (flightType === 'internacional') {
+          // Internacional: comisión 3%
+          base = final / 1.03;
+          profit = final - base;
+          profitRate = 0.03;
         }
-      } else {
-        profitRate = 0.185;
+        return { base: base, profit: profit, final: final, profitRate: profitRate };
       }
-    } else if (service === 'hotels') {
-      profitRate = 0.185;
-    } else if (service === 'assistance') {
-      profitRate = 0.30;
-    } else if (service === 'transfers') {
-      profitRate = 0.185;
-    } else if (service === 'cars') {
-      if (provider === 'BookingCars') {
-        base = parseFloat(amount) * 0.88;
-        final = parseFloat(amount);
-        profit = final - base;
-        profitRate = 0.12;
-      } else {
-        profitRate = 0.185;
-      }
-    } else if (service === 'packages') {
-      const rates = { 'Ola': 0.085, 'Julia': 0.09 };
-      profitRate = rates[provider] || 0;
-    } else if (service === 'cruises') {
-      profitRate = 0.035;
-      profit = base * profitRate;
-      final = base + profit;
-    } else if (service === 'excursions') {
-      profitRate = 0.185;
-    } else if (service === 'buspackages') {
-      const rates = { '360 Regional': 0.085, 'KMB': 0.035, 'RolSol': 0.12, 'Balloon': 0.12, 'Astros': 0.12, 'TuViaje': 0.085 };
-      profitRate = rates[provider] || 0;
-    } 
-
-    if (service !== 'cars' || provider !== 'BookingCars') {
-      if (service !== 'cruises') {
-        profit = final * profitRate;
-        final = final + profit;
-      }
+    } else if (provider === 'Web Adicional') {
+      // Comisiones para Web Adicional según el servicio
+      const rates = {
+        'hotels': 0.06,      
+        'packages': 0.045,   
+        'cars': 0.05,        
+        'excursions': 0.05,  
+        'transfers': 0.05,   
+        'assistance': 0.15,  
+        'disney': 0.05,      
+        'universal': 0.05,   
+        'xcaret': 0.05,      
+        'flights': 0.05,     
+      };
+      
+      profitRate = rates[service] || 0;
+      // El monto ingresado es el TOTAL (con comisión incluida)
+      base = final / (1 + profitRate);
+      profit = final - base;
+      
+      return { base: base, profit: profit, final: final, profitRate: profitRate };
     }
+  }
 
-    return { base: base, profit: profit, final: final, profitRate: profitRate };
-  };
+  // LÓGICA PARA AGENCIAS 
+  if (service === 'flights') {
+    if (calculationMode === 'quick' && flightType) {
+      if (flightType === 'internacional') {
+        profitRate = 0.12;
+      } else if (flightType === 'nacional') {
+        profitRate = 0.15;
+      }
+    } else {
+      profitRate = 0.185;
+    }
+  } else if (service === 'hotels') {
+    profitRate = 0.185;
+  } else if (service === 'assistance') {
+    profitRate = 0.30;
+  } else if (service === 'transfers') {
+    profitRate = 0.185;
+  } else if (service === 'cars') {
+    if (provider === 'BookingCars') {
+      base = parseFloat(amount) * 0.88;
+      final = parseFloat(amount);
+      profit = final - base;
+      profitRate = 0.12;
+    } else {
+      profitRate = 0.185;
+    }
+  } else if (service === 'packages') {
+    const rates = { 'Ola': 0.085, 'Julia': 0.09 };
+    profitRate = rates[provider] || 0;
+  } else if (service === 'cruises') {
+    profitRate = 0.035;
+    profit = base * profitRate;
+    final = base + profit;
+  } else if (service === 'excursions') {
+    profitRate = 0.185;
+  } else if (service === 'buspackages') {
+    const rates = { '360 Regional': 0.085, 'KMB': 0.035, 'RolSol': 0.12, 'Balloon': 0.12, 'Astros': 0.12, 'TuViaje': 0.085 };
+    profitRate = rates[provider] || 0;
+  } 
+
+  if (service !== 'cars' || provider !== 'BookingCars') {
+    if (service !== 'cruises') {
+      profit = final * profitRate;
+      final = final + profit;
+    }
+  }
+
+  return { base: base, profit: profit, final: final, profitRate: profitRate };
+};
 
   const handleStartBudget = () => {
     if (!budgetName.trim()) return;
@@ -142,17 +203,22 @@ const TravelCalculator = () => {
 
   const handleAddService = () => {
     const providerToUse = userType === 'freelancer' 
-      ? (providers[selectedService] && providers[selectedService][0] ? providers[selectedService][0] : 'Default') 
+      ? formData.provider 
       : formData.provider;
     
     if (!formData.amount) return;
-    if (userType === 'agencia' && !providerToUse) return;
+    if (!providerToUse) return;
     
     if (mode === 'quick' && selectedService === 'flights' && !formData.flightType) {
-      alert('Debes seleccionar si el vuelo es Nacional o Internacional');
-      return;
-    }
-
+      if (mode === 'quick' && userType === 'agencia') {
+        alert('Debes seleccionar si el vuelo es Nacional o Internacional');
+        return;
+      }
+      if (userType === 'freelancer' && formData.provider === 'Feliz Viaje Web') {
+       alert('Debes seleccionar si el vuelo es Nacional o Internacional');
+       return;
+  }
+  }
     if (mode === 'budget') {
       const serviceCount = currentBudget.services.filter(s => s.type === selectedService).length;
       if (selectedService === 'assistance' && serviceCount >= 1) {
@@ -697,10 +763,22 @@ const TravelCalculator = () => {
                 <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Servicio:</span>
                 <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</span>
               </div>
-              {userType === 'agencia' && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                  <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Proveedor:</span>
-                  <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.provider}</span>
+              {(userType === 'agencia' || userType === 'freelancer') && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
+                  <select 
+                    value={formData.provider || ''} 
+                    onChange={(e) => {
+                      setFormData({ ...formData, provider: e.target.value });
+                      if (selectedService === 'assistance' && e.target.value === 'AssisCard') {
+                        setCurrency('USD');
+                      }
+                    }} 
+                    style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}
+                  >
+                    <option value="">Seleccionar...</option>
+                    {(userType === 'freelancer' ? providersFreelancer[selectedService] : providers[selectedService])?.map(provider => <option key={provider} value={provider}>{provider}</option>)}
+                  </select>
                 </div>
               )}
               {service.type === 'flights' && service.flightType && (
@@ -760,11 +838,27 @@ const TravelCalculator = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem', maxWidth: '64rem', margin: '0 auto 3rem' }}>
             {services.filter(service => {
               if (mode === 'quick') {
-                if (userType === 'freelancer' && service.agenciaOnly) return false;
-                return true;
+                if (userType === 'freelancer') {
+                  // Mostrar servicios de freelancer y los generales
+                  if (service.agenciaOnly) return false;
+                  return true;
+                }
+                if (userType === 'agencia') {
+                  if (service.freelancerOnly) return false;
+                  return true;
+                }
               }
-              if (userType === 'freelancer' && service.agenciaOnly) return false;
-              return !service.quickOnly;
+              if (mode === 'budget') {
+                if (userType === 'freelancer') {
+                  if (service.agenciaOnly || service.quickOnly) return false;
+                  return true;
+                }
+                if (userType === 'agencia') {
+                  if (service.freelancerOnly || service.quickOnly) return false;
+                  return true;
+                }
+              }
+              return false;
             }).map(service => {
               const Icon = service.icon;
               return (
@@ -929,26 +1023,17 @@ const TravelCalculator = () => {
                 )}
               </div>
             )}
-            {userType === 'agencia' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
-                <select 
-                  value={formData.provider || ''} 
-                  onChange={(e) => {
-                    setFormData({ ...formData, provider: e.target.value });
-                    if (selectedService === 'assistance' && e.target.value === 'AssisCard') {
-                      setCurrency('USD');
-                    }
-                  }} 
-                  style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}
-                >
-                  <option value="">Seleccionar...</option>
-                  {providers[selectedService]?.map(provider => <option key={provider} value={provider}>{provider}</option>)}
-                </select>
+            {(userType === 'agencia' || userType === 'freelancer') && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Proveedor:</span>
+                <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.provider}</span>
               </div>
             )}
             
-            {selectedService === 'flights' && mode === 'quick' && (
+            {selectedService === 'flights' && (
+              (mode === 'quick' && userType === 'agencia') || 
+              (userType === 'freelancer' && formData.provider === 'Feliz Viaje Web')
+            ) && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Tipo de Vuelo</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -970,7 +1055,9 @@ const TravelCalculator = () => {
                     }}
                   >
                     <span>Nacional</span>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>15% rentabilidad</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                      {userType === 'freelancer' ? '5% comisión' : '15% rentabilidad'}
+                    </span>
                   </button>
                   <button 
                     onClick={() => setFormData({ ...formData, flightType: 'internacional' })} 
@@ -990,7 +1077,9 @@ const TravelCalculator = () => {
                     }}
                   >
                     <span>Internacional</span>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>12% rentabilidad</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                      {userType === 'freelancer' ? '3% comisión' : '12% rentabilidad'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1005,19 +1094,21 @@ const TravelCalculator = () => {
               onClick={handleAddService} 
               disabled={
                 !formData.amount || 
-                (userType === 'agencia' && !formData.provider) ||
-                (mode === 'quick' && selectedService === 'flights' && !formData.flightType)
-              } 
+                !formData.provider ||
+                (selectedService === 'flights' && !formData.flightType && 
+                  ((mode === 'quick' && userType === 'agencia') || 
+                  (userType === 'freelancer' && formData.provider === 'Feliz Viaje Web')))
+              }
               style={{ 
                 width: '100%', 
-                background: (formData.amount && (userType === 'freelancer' || formData.provider) && (mode !== 'quick' || selectedService !== 'flights' || formData.flightType)) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', 
+                background: (formData.amount && formData.provider && (selectedService !== 'flights'|| formData.flightType || (userType === 'freelancer' && formData.provider === 'Web Adicional') ||(userType === 'agencia' && mode === 'budget'))) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', 
                 color: 'white', 
                 padding: '1.25rem', 
                 borderRadius: '0.75rem', 
                 fontWeight: 'bold', 
                 fontSize: '1.125rem', 
                 border: 'none', 
-                cursor: (formData.amount && (userType === 'freelancer' || formData.provider) && (mode !== 'quick' || selectedService !== 'flights' || formData.flightType)) ? 'pointer' : 'not-allowed', 
+                cursor: (formData.amount && formData.provider && (selectedService !== 'flights' || formData.flightType || (userType === 'freelancer' && formData.provider === 'Web Adicional') ||(userType === 'agencia' && mode === 'budget'))) ? 'pointer' : 'not-allowed',  
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
