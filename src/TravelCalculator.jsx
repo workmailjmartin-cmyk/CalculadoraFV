@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-// He renombrado Minimize2 a Minimize para mayor compatibilidad,
-// aunque Minimize2 es más preciso para el ícono que reduce la ventana.
-// Si el error persiste, deberás verificar la versión de tu librería lucide-react.
-import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play, Minimize2 } from 'lucide-react'; 
+import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play, Minimize } from 'lucide-react'; 
 import logo from "./assets/logo.jpg";
 
 const TravelCalculator = () => {
@@ -431,7 +428,7 @@ const TravelCalculator = () => {
         }}
         title={isCompactMode ? 'Expandir' : 'Modo Compacto'}
       >
-        <Minimize2 size={20} style={{ transform: isCompactMode ? 'rotate(180deg)' : 'none' }} />
+        <Minimize size={20} style={{ transform: isCompactMode ? 'rotate(180deg)' : 'none' }} />
       </button>
     );
   };
