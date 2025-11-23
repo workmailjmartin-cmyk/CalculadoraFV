@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play, Minimize } from 'lucide-react';
+import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play } from 'lucide-react';
 import logo from "./assets/logo.jpg";
 
 const TravelCalculator = () => {
@@ -18,7 +18,6 @@ const TravelCalculator = () => {
   const [userType, setUserType] = useState(null);
   const [selectedUserType, setSelectedUserType] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [isCompactMode, setIsCompactMode] = useState(false);
 
   const PASSWORDS = {
     agencia: 'felizviaje2025',
@@ -101,41 +100,65 @@ const TravelCalculator = () => {
     let profit = 0;
     let base = parseFloat(amount);
 
+    // --- LÓGICA PARA FREELANCERS ---
     if (userType === 'freelancer') {
+      
       if (provider === 'Feliz Viaje Web' || (provider === 'Web Adicional' && service === 'flights')) {
+        
         if (service === 'flights' && flightType) {
           if (flightType === 'nacional') {
-            profitRate = 0.05;
+            profitRate = 0.05; // 5% comisión
           } else if (flightType === 'internacional') {
-            profitRate = 0.03;
+            profitRate = 0.03; // 3% comisión
           }
         } else {
+          // Otros servicios de Feliz Viaje Web usan 8.5% (Tarifa Final)
           profitRate = 0.085; 
         }
+
         if (profitRate > 0) {
           base = final / (1 + profitRate);
           profit = final - base;
         }
+        
         return { base: base, profit: profit, final: final, profitRate: profitRate };
+
       } else if (provider === 'Web Adicional') {
+        // Monto ingresado es la tarifa final. NO SE SUMA EL 3.5% MATEMÁTICAMENTE.
         const rates = {
-          'hotels': 0.06, 'packages': 0.045, 'cars': 0.05, 'excursions': 0.05, 
-          'transfers': 0.05, 'assistance': 0.15, 'disney': 0.05, 'universal': 0.05, 'xcaret': 0.05,
+          'hotels': 0.06,      // 6%
+          'packages': 0.045,   // 4.5%
+          'cars': 0.05,        // 5%
+          'excursions': 0.05,  // 5%
+          'transfers': 0.05,   // 5%
+          'assistance': 0.15,  // 15%
+          'disney': 0.05,      // 5%
+          'universal': 0.05,   // 5%
+          'xcaret': 0.05,      // 5%
         };
+        
         profitRate = rates[service] || 0;
+        
         if (profitRate > 0) {
+          // Fórmula: final = base * (1 + profitRate)
           base = final / (1 + profitRate);
           profit = final - base;
         }
+        
         return { base: base, profit: profit, final: final, profitRate: profitRate };
       }
+      
       return { base: base, profit: profit, final: final, profitRate: profitRate };
     }
 
+    // --- LÓGICA PARA AGENCIAS ---
     if (service === 'flights') {
       if (calculationMode === 'quick' && flightType) {
-        if (flightType === 'internacional') profitRate = 0.12;
-        else if (flightType === 'nacional') profitRate = 0.15;
+        if (flightType === 'internacional') {
+          profitRate = 0.12;
+        } else if (flightType === 'nacional') {
+          profitRate = 0.15;
+        }
       } else {
         profitRate = 0.185;
       }
@@ -176,6 +199,7 @@ const TravelCalculator = () => {
         final = final + profit;
       }
     }
+
     return { base: base, profit: profit, final: final, profitRate: profitRate };
   };
 
@@ -188,29 +212,60 @@ const TravelCalculator = () => {
 
   const handleAddService = () => {
     const providerToUse = formData.provider;
+    
     if (!formData.amount) return;
-    if (!providerToUse) { alert('Debes seleccionar un proveedor.'); return; }
-    const requiresFlightType = selectedService === 'flights' && ((userType === 'agencia' && mode === 'quick') || (userType === 'freelancer' && (providerToUse === 'Feliz Viaje Web' || providerToUse === 'Web Adicional')));
-    if (requiresFlightType && !formData.flightType) { alert('Debes seleccionar si el vuelo es Nacional o Internacional'); return; }
+    if (!providerToUse) {
+      alert('Debes seleccionar un proveedor.');
+      return;
+    }
+    
+    const requiresFlightType = 
+      selectedService === 'flights' && (
+        (userType === 'agencia' && mode === 'quick') || 
+        (userType === 'freelancer' && (providerToUse === 'Feliz Viaje Web' || providerToUse === 'Web Adicional'))
+      );
+
+    if (requiresFlightType && !formData.flightType) {
+      alert('Debes seleccionar si el vuelo es Nacional o Internacional');
+      return;
+    }
     
     if (mode === 'budget') {
       const serviceCount = currentBudget.services.filter(s => s.type === selectedService).length;
-      if (selectedService === 'assistance' && serviceCount >= 1) { alert('Solo puedes agregar 1 servicio de Asistencia al Viajero por presupuesto'); return; }
-      if (selectedService === 'cars' && serviceCount >= 1) { alert('Solo puedes agregar 1 servicio de Auto por presupuesto'); return; }
+      if (selectedService === 'assistance' && serviceCount >= 1) {
+        alert('Solo puedes agregar 1 servicio de Asistencia al Viajero por presupuesto');
+        return;
+      }
+      if (selectedService === 'cars' && serviceCount >= 1) {
+        alert('Solo puedes agregar 1 servicio de Auto por presupuesto');
+        return;
+      }
     }
 
     const numericAmount = parseFormattedNumber(formData.amount);
     const calculation = calculatePrice(selectedService, providerToUse, numericAmount, formData.customRate, formData.flightType, mode);
     const serviceData = {
-      id: Date.now(), type: selectedService, typeName: services.find(s => s.id === selectedService).name,
-      provider: providerToUse, currency: currency, base: calculation.base, profit: calculation.profit,
-      final: calculation.final, profitRate: calculation.profitRate, flightType: formData.flightType, isActive: true,
+      id: Date.now(),
+      type: selectedService,
+      typeName: services.find(s => s.id === selectedService).name,
+      provider: providerToUse,
+      currency: currency,
+      base: calculation.base,
+      profit: calculation.profit,
+      final: calculation.final,
+      profitRate: calculation.profitRate,
+      flightType: formData.flightType,
+      isActive: true,
     };
 
     if (mode === 'budget') {
       const updatedServices = [...currentBudget.services, serviceData];
       const servicesByType = {};
-      updatedServices.forEach(service => { if (!servicesByType[service.type]) servicesByType[service.type] = []; servicesByType[service.type].push(service); });
+      updatedServices.forEach(service => {
+        if (!servicesByType[service.type]) servicesByType[service.type] = [];
+        servicesByType[service.type].push(service);
+      });
+      
       const renamedServices = updatedServices.map(service => {
         const sameTypeServices = servicesByType[service.type];
         const baseServiceName = services.find(s => s.id === service.type).name;
@@ -223,6 +278,7 @@ const TravelCalculator = () => {
         }
         return { ...service, typeName: baseServiceName };
       });
+      
       setCurrentBudget({ ...currentBudget, services: renamedServices });
       setFormData({ provider: '', amount: '', flightType: '' });
       setSelectedService(null);
@@ -253,62 +309,109 @@ const TravelCalculator = () => {
   };
 
   const handleToggleService = (serviceId) => {
-    const updatedServices = currentBudget.services.map(s => s.id === serviceId ? { ...s, isActive: !s.isActive } : s);
+    const updatedServices = currentBudget.services.map(s => 
+      s.id === serviceId ? { ...s, isActive: !s.isActive } : s
+    );
     setCurrentBudget({ ...currentBudget, services: updatedServices });
   };
 
-  const handleDeleteBudget = (budgetId) => { setBudgets(budgets.filter(b => b.id !== budgetId)); };
-  const handleEditBudget = (budget) => { setEditingBudget(budget); setCurrentBudget({ ...budget }); setMode('budget'); };
+  const handleDeleteBudget = (budgetId) => {
+    setBudgets(budgets.filter(b => b.id !== budgetId));
+  };
+
+  const handleEditBudget = (budget) => {
+    setEditingBudget(budget);
+    setCurrentBudget({ ...budget });
+    setMode('budget');
+  };
 
   const getSummary = () => {
     if (!currentBudget || currentBudget.services.length === 0) return null;
+    
     const activeServices = currentBudget.services.filter(s => s.isActive !== false);
+    
     const totalBaseUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
     const totalProfitUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
     const totalFinalUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.final, 0);
     const totalBaseARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.base, 0);
     const totalProfitARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
     const totalFinalARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
-    return { totalBaseUSD, totalProfitUSD, totalFinalUSD, totalBaseARS, totalProfitARS, totalFinalARS, hasUSD: totalBaseUSD > 0, hasARS: totalBaseARS > 0 };
+    
+    return { 
+      totalBaseUSD, 
+      totalProfitUSD, 
+      totalFinalUSD, 
+      totalBaseARS, 
+      totalProfitARS, 
+      totalFinalARS, 
+      hasUSD: totalBaseUSD > 0, 
+      hasARS: totalBaseARS > 0 
+    };
   };
 
   const resetAll = () => {
-    setMode(null); setCurrentBudget(null); setSelectedService(null); setFormData({ provider: '', amount: '', flightType: '' });
-    setCalculatedServices([]); setCurrency('USD'); setViewingBudget(null); setEditingBudget(null);
+    setMode(null);
+    setCurrentBudget(null);
+    setSelectedService(null);
+    setFormData({ provider: '', amount: '', flightType: '' });
+    setCalculatedServices([]);
+    setCurrency('USD');
+    setViewingBudget(null);
+    setEditingBudget(null);
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false); setUserType(null); setSelectedUserType(null); setMode(null); setCurrentBudget(null);
-    setSelectedService(null); setFormData({}); setCalculatedServices([]); setCurrency('USD'); setViewingBudget(null);
-    setEditingBudget(null); setBudgets([]); setIsCompactMode(false);
+    setIsLoggedIn(false);
+    setUserType(null);
+    setSelectedUserType(null);
+    setMode(null);
+    setCurrentBudget(null);
+    setSelectedService(null);
+    setFormData({});
+    setCalculatedServices([]);
+    setCurrency('USD');
+    setViewingBudget(null);
+    setEditingBudget(null);
+    setBudgets([]);
   };
 
   const formatCurrency = (amount, curr) => curr === 'USD' ? '$' + formatNumber(amount) : '$' + formatNumber(amount) + ' ARS';
 
   const handleLogin = () => {
-    if (loginPassword === PASSWORDS[selectedUserType]) { setIsLoggedIn(true); setUserType(selectedUserType); setLoginPassword(''); } else { alert('Contraseña incorrecta'); setLoginPassword(''); }
+    if (loginPassword === PASSWORDS[selectedUserType]) {
+      setIsLoggedIn(true);
+      setUserType(selectedUserType);
+      setLoginPassword('');
+    } else {
+      alert('Contraseña incorrecta');
+      setLoginPassword('');
+    }
   };
 
+  // --- COMPONENTES AUXILIARES ---
+
   const FooterSignature = () => (
-    <p style={{ position: 'absolute', bottom: '1rem', left: '50%', transform: 'translateX(-50%)', fontSize: '0.7rem', color: '#BDBFC1', opacity: 0.5 }}>
+    <p style={{ 
+      fontSize: '0.7rem', 
+      color: '#BDBFC1', 
+      opacity: 0.5,
+      padding: '1rem 0',
+      marginTop: 'auto', // Empuja el footer hacia abajo
+      textAlign: 'center',
+      width: '100%'
+    }}>
       Designed by Juan Pablo Martin
     </p>
   );
 
-  const CompactModeButton = () => {
-    if (!isLoggedIn || viewingBudget) return null;
-    return (
-      <button onClick={() => setIsCompactMode(!isCompactMode)} style={{ position: 'fixed', top: isCompactMode ? '1rem' : '1.5rem', right: isCompactMode ? '1rem' : '1.5rem', background: isCompactMode ? 'linear-gradient(135deg, #56DDE0 0%, #4cc9d4 100%)' : '#11173d', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', zIndex: 1000, boxShadow: '0 4px 12px rgba(0,0,0,0.3)', transition: 'all 0.3s' }} title={isCompactMode ? 'Expandir' : 'Modo Compacto'}>
-        <Minimize size={20} style={{ transform: isCompactMode ? 'rotate(180deg)' : 'none' }} />
-      </button>
-    );
-  };
-
   const renderContent = () => {
     if (!selectedUserType) {
+      // 1. Selección Agencia/Freelancer
       return (
-        <div style={{ maxWidth: '40rem', width: '100%', padding: isCompactMode ? '1rem' : '0' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '3rem' }}><img src={logo} alt="Feliz Viaje" style={{ height: '120px', width: 'auto', maxWidth: '100%' }}/></div>
+        <div style={{ maxWidth: '40rem', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '3rem' }}>
+            <img src={logo} alt="Feliz Viaje" style={{ height: '120px', width: 'auto', maxWidth: '100%' }}/>
+          </div>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '3rem', textAlign: 'center' }}>Calculadora</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '32rem', margin: '0 auto' }}>
             <div onClick={() => setSelectedUserType('agencia')} style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem 2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', transition: 'all 0.3s', textAlign: 'center' }} onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 20px 25px rgba(239, 90, 26, 0.15)'; e.currentTarget.style.borderColor = '#ef5a1a'; e.currentTarget.style.transform = 'translateY(-4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'; e.currentTarget.style.borderColor = '#f3f4f6'; e.currentTarget.style.transform = 'translateY(0)'; }} >
@@ -325,8 +428,9 @@ const TravelCalculator = () => {
     }
 
     if (!isLoggedIn) {
+      // 2. Login
       return (
-        <div style={{ maxWidth: '28rem', width: '100%', padding: isCompactMode ? '1rem' : '0' }}>
+        <div style={{ maxWidth: '28rem', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <button onClick={() => setSelectedUserType(null)} style={{ marginBottom: '1rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>← Volver</button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}><img src={logo} alt="Feliz Viaje" style={{ height: '80px', width: 'auto', maxWidth: '100%' }}/></div>
@@ -345,6 +449,7 @@ const TravelCalculator = () => {
     }
 
     if (viewingBudget) {
+      // 3. Vista de Presupuesto
       const activeServices = viewingBudget.services.filter(s => s.isActive !== false);
       const totalBaseUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
       const totalProfitUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
@@ -356,7 +461,7 @@ const TravelCalculator = () => {
       const hasARS = totalBaseARS > 0;
 
       return (
-        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 0 2rem' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', flex: 1 }}>
           <button onClick={() => setViewingBudget(null)} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h3 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d' }}>{viewingBudget.name}</h3>
@@ -407,8 +512,9 @@ const TravelCalculator = () => {
     }
 
     if (!mode) {
+      // 4. Menú principal (Modo Rápido / Presupuesto)
       return (
-        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isCompactMode ? '0' : '0 0 2rem' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <div></div>
             <button onClick={handleLogout} style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', border: 'none', borderRadius: '0.75rem', padding: '0.75rem 1.5rem', cursor: 'pointer', fontWeight: '600', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 90, 26, 0.3)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}><LogOut size={18} />Salir</button>
@@ -451,8 +557,9 @@ const TravelCalculator = () => {
     }
 
     if (mode === 'budget' && !currentBudget) {
+      // 5. Nuevo Presupuesto (Ingresar nombre)
       return (
-        <div style={{ maxWidth: '48rem', margin: '0 auto', padding: isCompactMode ? '0' : '0 0 2rem' }}>
+        <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2.5rem', textAlign: 'center' }}>Nuevo Presupuesto</h2>
@@ -466,6 +573,7 @@ const TravelCalculator = () => {
     }
 
     if (mode === 'quick' && calculatedServices.length > 0) {
+      // 6. Resultado de Cotización Individual
       const service = calculatedServices[0];
       const isFreelancer = userType === 'freelancer';
       const isWebAdicional = service.provider === 'Web Adicional' && isFreelancer;
@@ -474,8 +582,15 @@ const TravelCalculator = () => {
       if (isWebAdicional) {
         const commissionRates = {
           'flights': (service.type === 'flights' && service.flightType === 'nacional' ? 0.05 : 0.03), 
-          'hotels': 0.06, 'packages': 0.045, 'cars': 0.05, 'excursions': 0.05, 'transfers': 0.05, 
-          'assistance': 0.15, 'disney': 0.05, 'universal': 0.05, 'xcaret': 0.05,
+          'hotels': 0.06,      
+          'packages': 0.045,   
+          'cars': 0.05,        
+          'excursions': 0.05,  
+          'transfers': 0.05,   
+          'assistance': 0.15,  
+          'disney': 0.05,      
+          'universal': 0.05,   
+          'xcaret': 0.05,      
         };
         profitPercentage = (commissionRates[service.type] || 0) * 100;
       } else {
@@ -483,7 +598,7 @@ const TravelCalculator = () => {
       }
 
       return (
-        <div style={{ maxWidth: isCompactMode ? '30rem' : '48rem', margin: '0 auto', padding: isCompactMode ? '0' : '0 0 2rem' }}>
+        <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Home size={20} /> Inicio</button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
             <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem', textAlign: 'center' }}>Resultado</h3>
@@ -492,10 +607,19 @@ const TravelCalculator = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Proveedor:</span><span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.provider}</span></div>
               {service.type === 'flights' && service.flightType && (<div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Tipo de Vuelo:</span><span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.flightType === 'nacional' ? 'Nacional' : 'Internacional'}</span></div>)}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Moneda:</span><span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.currency === 'USD' ? 'Dólares (USD)' : 'Pesos Argentinos (ARS)'}</span></div>
+              
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Precio Final (Ingresado):</span><span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{formatCurrency(service.final, service.currency)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto (Base):</span><span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{formatCurrency(service.base, service.currency)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>{isFreelancer ? `Comisión (${formatNumber(profitPercentage)}%)` : `Rentabilidad (${formatNumber(service.profitRate * 100)}%)`}:</span><span style={{ fontWeight: 'bold', color: '#56DDE0', fontSize: '1.125rem' }}>{formatCurrency(service.profit, service.currency)}</span></div>
-              {isWebAdicional && (<p style={{ color: '#ef5a1a', fontSize: '0.875rem', fontWeight: '600', textAlign: 'center', border: '1px solid #ef5a1a', padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: 'rgba(239, 90, 26, 0.1)' }}>⚠️ **NOTA:** Este cálculo NO incluye el 3.5% de gastos administrativos.</p>)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}><span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>
+                {isFreelancer ? `Comisión (${formatNumber(profitPercentage)}%)` : `Rentabilidad (${formatNumber(service.profitRate * 100)}%)`}:
+              </span><span style={{ fontWeight: 'bold', color: '#56DDE0', fontSize: '1.125rem' }}>{formatCurrency(service.profit, service.currency)}</span></div>
+              
+              {isWebAdicional && (
+                <p style={{ color: '#ef5a1a', fontSize: '0.875rem', fontWeight: '600', textAlign: 'center', border: '1px solid #ef5a1a', padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: 'rgba(239, 90, 26, 0.1)' }}>
+                  ⚠️ **NOTA:** Este cálculo NO incluye el 3.5% de gastos administrativos.
+                </p>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '1rem' }}><span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.5rem' }}>Total Final:</span><span style={{ fontWeight: 'bold', fontSize: '2.5rem', color: '#ef5a1a' }}>{formatCurrency(service.final, service.currency)}</span></div>
             </div>
             <button onClick={() => { setCalculatedServices([]); setSelectedService(null); setCurrency('USD'); }} style={{ width: '100%', background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', color: 'white', padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>Volver a Cotizar</button>
@@ -505,12 +629,13 @@ const TravelCalculator = () => {
     }
 
     if (!selectedService) {
+      // 7. Seleccionar Servicio (Vuelos, Alojamiento, etc.)
       return (
-        <div style={{ maxWidth: isCompactMode ? '40rem' : '80rem', margin: '0 auto', padding: isCompactMode ? '0' : '0 0 2rem' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', flex: 1 }}>
           <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           {mode === 'budget' && (<div style={{ textAlign: 'center', marginBottom: '2.5rem' }}><div style={{ display: 'inline-block', background: editingBudget ? 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)' : 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)', padding: '1rem 2.5rem', borderRadius: '1rem', border: editingBudget ? '2px solid #11173d' : '2px solid #e5e7eb' }}><h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: editingBudget ? 'white' : '#11173d', margin: '0' }}>{currentBudget.name}{editingBudget && <span style={{ fontSize: '0.875rem', marginLeft: '0.75rem', opacity: 0.8 }}>(Editando)</span>}</h3></div><p style={{ color: '#BDBFC1', marginTop: '0.75rem' }}>{currentBudget.services.length} servicios agregados</p></div>)}
           <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '3rem', textAlign: 'center' }}>{editingBudget ? 'Editar Presupuesto' : (mode === 'budget' ? 'Agregar Servicio' : 'Seleccionar Servicio')}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: isCompactMode ? 'repeat(auto-fit, minmax(120px, 1fr))' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isCompactMode ? '1rem' : '1.5rem', marginBottom: '3rem', maxWidth: '64rem', margin: '0 auto 3rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem', maxWidth: '64rem', margin: '0 auto 3rem' }}>
             {services.filter(service => {
               if (userType === 'agencia') {
                 if (service.freelancerOnly) return false;
@@ -523,11 +648,11 @@ const TravelCalculator = () => {
               return false;
             }).map(service => {
               const Icon = service.icon;
-              return (<div key={service.id} onClick={() => { setSelectedService(service.id); setFormData({ provider: '', amount: '', flightType: '' }); }} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: isCompactMode ? '1.5rem' : '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', textAlign: 'center', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ef5a1a'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#f3f4f6'; }}>
-                  <div style={{ backgroundColor: '#f3f4f6', width: isCompactMode ? '3rem' : '4rem', height: isCompactMode ? '3rem' : '4rem', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                    <Icon color="#56DDE0" size={isCompactMode ? 20 : 28} />
+              return (<div key={service.id} onClick={() => { setSelectedService(service.id); setFormData({ provider: '', amount: '', flightType: '' }); }} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', textAlign: 'center', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ef5a1a'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#f3f4f6'; }}>
+                  <div style={{ backgroundColor: '#f3f4f6', width: '4rem', height: '4rem', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                    <Icon color="#56DDE0" size={28} />
                   </div>
-                  <h3 style={{ fontWeight: 'bold', color: '#11173d', fontSize: isCompactMode ? '0.875rem' : '1rem' }}>{service.name}</h3>
+                  <h3 style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1rem' }}>{service.name}</h3>
                 </div>);
             })}
           </div>
@@ -546,12 +671,15 @@ const TravelCalculator = () => {
       );
     }
 
+    // 8. Ingreso de Monto/Proveedor
     return (
-      <div style={{ maxWidth: isCompactMode ? '30rem' : '48rem', margin: '0 auto', padding: isCompactMode ? '0' : '0 0 2rem' }}>
+      <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <button onClick={() => { setSelectedService(null); setFormData({ provider: '', amount: '', flightType: '' }); }} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
         <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2.5rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem', textAlign: 'center' }}>{services.find(s => s.id === selectedService)?.name}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            
+            {/* SELECTOR DE MONEDA */}
             {selectedService !== 'buspackages' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Moneda</label>
@@ -560,13 +688,20 @@ const TravelCalculator = () => {
                 ) : (<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}><button onClick={() => setCurrency('USD')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'USD' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'USD' ? 'white' : '#11173d' }}>USD ($)</button><button onClick={() => setCurrency('ARS')} style={{ padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', background: currency === 'ARS' ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#f3f4f6', color: currency === 'ARS' ? 'white' : '#11173d' }}>ARS ($)</button></div>)}
               </div>
             )}
+            
+            {/* SELECTOR DE PROVEEDOR */}
             {(userType === 'agencia' || userType === 'freelancer') && currentProviders[selectedService] && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
                 <select value={formData.provider || ''} onChange={(e) => { const newProvider = e.target.value; setFormData({ ...formData, provider: newProvider, flightType: '' }); if (userType === 'agencia' && selectedService === 'assistance' && newProvider === 'AssisCard') { setCurrency('USD'); } }} style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}><option value="">Seleccionar Proveedor...</option>{currentProviders[selectedService].map(provider => <option key={provider} value={provider}>{provider}</option>)}</select>
               </div>
             )}
-            {selectedService === 'flights' && formData.provider && ((userType === 'agencia' && mode === 'quick') || (userType === 'freelancer' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional'))) && (
+            
+            {/* SELECTOR TIPO DE VUELO */}
+            {selectedService === 'flights' && formData.provider && (
+              (userType === 'agencia' && mode === 'quick') || 
+              (userType === 'freelancer' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional'))
+            ) && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Tipo de Vuelo</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -575,21 +710,71 @@ const TravelCalculator = () => {
                 </div>
               </div>
             )}
+            
+            {/* INPUT DE MONTO BASE/FINAL */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Monto {userType === 'freelancer' ? 'Final (con comisión)' : 'Base'}</label>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>
+                Monto {userType === 'freelancer' ? 'Final (con comisión)' : 'Base'}
+              </label>
               <input type="text" value={formData.amount || ''} onChange={handleAmountChange} placeholder="0,00" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
-              {userType === 'freelancer' && formData.provider === 'Web Adicional' && (<p style={{ color: '#ef5a1a', fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'center' }}>⚠️ **NOTA:** Este cálculo NO incluye el **3.5%** de gastos administrativos.</p>)}
+              
+              {/* MENSAJE DE GASTOS ADMINISTRATIVOS */}
+              {userType === 'freelancer' && formData.provider === 'Web Adicional' && (
+                <p style={{ color: '#ef5a1a', fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'center' }}>
+                  ⚠️ **NOTA:** Este cálculo NO incluye el **3.5%** de gastos administrativos.
+                </p>
+              )}
             </div>
-            <button onClick={handleAddService} disabled={!formData.amount || !formData.provider || (selectedService === 'flights' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional') && userType === 'freelancer' && !formData.flightType) || (selectedService === 'flights' && mode === 'quick' && userType === 'agencia' && !formData.flightType)} style={{ width: '100%', background: (formData.amount && formData.provider && (selectedService !== 'flights' || formData.flightType || (userType === 'agencia' && mode === 'budget') || (userType === 'freelancer' && selectedService !== 'flights'))) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', color: 'white', padding: '1.25rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: (formData.amount && formData.provider && (selectedService !== 'flights' || formData.flightType || (userType === 'agencia' && mode === 'budget') || (userType === 'freelancer' && selectedService !== 'flights'))) ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}><Plus size={20} />{mode === 'budget' ? 'Agregar al Presupuesto' : 'Calcular'}</button>
+           
+            {/* BOTÓN CALCULAR/AGREGAR */}
+            <button onClick={handleAddService} disabled={
+                !formData.amount || 
+                !formData.provider ||
+                (selectedService === 'flights' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional') && userType === 'freelancer' && !formData.flightType) ||
+                (selectedService === 'flights' && mode === 'quick' && userType === 'agencia' && !formData.flightType)
+              }
+              style={{ 
+                width: '100%', 
+                background: (formData.amount && formData.provider && 
+                  (selectedService !== 'flights' || formData.flightType || (userType === 'agencia' && mode === 'budget') || 
+                  (userType === 'freelancer' && selectedService !== 'flights'))) ? 
+                  'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', 
+                color: 'white', 
+                padding: '1.25rem', 
+                borderRadius: '0.75rem', 
+                fontWeight: 'bold', 
+                fontSize: '1.125rem', 
+                border: 'none', 
+                cursor: (formData.amount && formData.provider && 
+                  (selectedService !== 'flights' || formData.flightType || (userType === 'agencia' && mode === 'budget') ||
+                  (userType === 'freelancer' && selectedService !== 'flights'))) ? 
+                  'pointer' : 'not-allowed',  
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '0.75rem' 
+              }}>
+              <Plus size={20} />
+              {mode === 'budget' ? 'Agregar al Presupuesto' : 'Calcular'}
+            </button>
           </div>
         </div>
       );
     }
   };
 
+  // --- RENDERIZADO PRINCIPAL ---
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: isCompactMode ? '0' : '2rem', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: !isLoggedIn || isCompactMode ? 'center' : 'flex-start', boxSizing: 'border-box' }}>
-      <CompactModeButton />
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#FFFFFF', 
+      padding: '2rem', 
+      position: 'relative', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      justifyContent: 'space-between', // Esto empuja el footer al final
+      boxSizing: 'border-box' 
+    }}>
       {renderContent()}
       <FooterSignature />
     </div>
