@@ -772,7 +772,7 @@ const TravelCalculator = () => {
       position: 'relative', 
       display: 'flex', 
       flexDirection: 'column', 
-      justifyContent: 'space-between', // Esto empuja el footer al final
+      justifyContent: 'space-between', 
       boxSizing: 'border-box' 
     }}>
       {renderContent()}
@@ -782,3 +782,4 @@ const TravelCalculator = () => {
 };
 
 export default TravelCalculator;
+          
