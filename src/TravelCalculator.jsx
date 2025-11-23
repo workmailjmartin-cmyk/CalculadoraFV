@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play } from 'lucide-react';
 import logo from "./assets/logo.jpg";
 
-
-
 const TravelCalculator = () => {
   const [mode, setMode] = useState(null);
   const [budgetName, setBudgetName] = useState('');
   const [currentBudget, setCurrentBudget] = useState(null);
   const [budgets, setBudgets] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({ provider: '', amount: '', flightType: '' });
   const [calculatedServices, setCalculatedServices] = useState([]);
   const [currency, setCurrency] = useState('USD');
   const [viewingBudget, setViewingBudget] = useState(null);
@@ -27,19 +25,19 @@ const TravelCalculator = () => {
   };
 
   const services = [
-  { id: 'flights', name: 'Vuelos', icon: Plane },
-  { id: 'hotels', name: 'Alojamiento', icon: Hotel },
-  { id: 'cruises', name: 'Cruceros', icon: Ship, quickOnly: true, agenciaOnly: true },
-  { id: 'assistance', name: 'Asistencia al Viajero', icon: Shield, agenciaOnly: true },
-  { id: 'transfers', name: 'Traslados', icon: MapPin },
-  { id: 'cars', name: 'Autos', icon: Car },
-  { id: 'packages', name: 'Paquetes/Circuitos', icon: Package },
-  { id: 'excursions', name: 'Excursiones', icon: Compass },
-  { id: 'buspackages', name: 'Paquetes en Bus', icon: Package, quickOnly: true, agenciaOnly: true },
-  { id: 'disney', name: 'Disney', icon: Home, freelancerOnly: true },
-  { id: 'universal', name: 'Universal', icon: MapPin, freelancerOnly: true }, 
-  { id: 'xcaret', name: 'Xcaret', icon: Compass, freelancerOnly: true },
-];
+    { id: 'flights', name: 'Vuelos', icon: Plane },
+    { id: 'hotels', name: 'Alojamiento', icon: Hotel },
+    { id: 'cruises', name: 'Cruceros', icon: Ship, quickOnly: true, agenciaOnly: true },
+    { id: 'assistance', name: 'Asistencia al Viajero', icon: Shield, agenciaOnly: true },
+    { id: 'transfers', name: 'Traslados', icon: MapPin },
+    { id: 'cars', name: 'Autos', icon: Car },
+    { id: 'packages', name: 'Paquetes/Circuitos', icon: Package },
+    { id: 'excursions', name: 'Excursiones', icon: Compass },
+    { id: 'buspackages', name: 'Paquetes en Bus', icon: Package, quickOnly: true, agenciaOnly: true },
+    { id: 'disney', name: 'Disney', icon: Home, freelancerOnly: true },
+    { id: 'universal', name: 'Universal', icon: Package, freelancerOnly: true }, 
+    { id: 'xcaret', name: 'Xcaret', icon: Compass, freelancerOnly: true },
+  ];
 
   const providers = {
     flights: ['Hoteldo', 'Ola', 'Turbo'],
@@ -54,19 +52,20 @@ const TravelCalculator = () => {
   };
 
   const providersFreelancer = {
-  flights: ['Feliz Viaje Web', 'Web Adicional'],
-  hotels: ['Feliz Viaje Web', 'Web Adicional'],
-  cruises: ['Web Adicional'],
-  assistance: ['Web Adicional'],
-  transfers: ['Feliz Viaje Web', 'Web Adicional'],
-  cars: ['Feliz Viaje Web', 'Web Adicional'],
-  packages: ['Feliz Viaje Web', 'Web Adicional'],
-  excursions: ['Feliz Viaje Web', 'Web Adicional'],
-  buspackages: ['Feliz Viaje Web', 'Web Adicional'],
-  disney: ['Web Adicional'],
-  universal: ['Web Adicional'],
-  xcaret: ['Web Adicional'],
-};
+    flights: ['Feliz Viaje Web', 'Web Adicional'],
+    hotels: ['Feliz Viaje Web', 'Web Adicional'],
+    transfers: ['Feliz Viaje Web', 'Web Adicional'],
+    cars: ['Feliz Viaje Web', 'Web Adicional'],
+    packages: ['Feliz Viaje Web', 'Web Adicional'],
+    excursions: ['Feliz Viaje Web', 'Web Adicional'],
+    assistance: ['Web Adicional'],
+    disney: ['Web Adicional'],
+    universal: ['Web Adicional'],
+    xcaret: ['Web Adicional'],
+  };
+  
+  const currentProviders = userType === 'freelancer' ? providersFreelancer : providers;
+
 
   const formatNumber = (num) => {
     const parts = num.toFixed(2).split('.');
@@ -80,7 +79,7 @@ const TravelCalculator = () => {
     const cleanValue = value.replace(/[^\d,]/g, '');
     const parts = cleanValue.split(',');
     if (parts[0]) {
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      parts[0] = parts[0].replace(/\./g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
     return parts.join(',');
   };
@@ -96,103 +95,129 @@ const TravelCalculator = () => {
     setFormData({ ...formData, amount: formatted });
   };
 
- const calculatePrice = (service, provider, amount, customRate, flightType, calculationMode) => {
-  let final = parseFloat(amount);
-  let profitRate = 0;
-  let profit = 0;
-  let base = parseFloat(amount);
+  const calculatePrice = (service, provider, amount, customRate, flightType, calculationMode) => {
+    let final = parseFloat(amount);
+    let profitRate = 0;
+    let profit = 0;
+    let base = parseFloat(amount);
 
-  // LÓGICA PARA FREELANCERS
-  if (userType === 'freelancer') {
-    if (provider === 'Feliz Viaje Web') {
-      // Solo para vuelos
-      if (service === 'flights' && flightType) {
-        if (flightType === 'nacional') {
-          // Nacional: comisión 5%
-          base = final / 1.05;
-          profit = final - base;
-          profitRate = 0.05;
-        } else if (flightType === 'internacional') {
-          // Internacional: comisión 3%
-          base = final / 1.03;
-          profit = final - base;
-          profitRate = 0.03;
+    // --- LÓGICA PARA FREELANCERS ---
+    if (userType === 'freelancer') {
+      const ADMIN_RATE = 0.035; // 3.5% Gastos Administrativos
+      
+      if (provider === 'Feliz Viaje Web' || (provider === 'Web Adicional' && service === 'flights')) {
+        // Vuelos FVW y Vuelos Web Adicional usan lógica de Vuelos 
+        
+        if (service === 'flights' && flightType) {
+          if (flightType === 'nacional') {
+            profitRate = 0.05; // 5% comisión
+          } else if (flightType === 'internacional') {
+            profitRate = 0.03; // 3% comisión
+          }
+        } else {
+          // Otros servicios de Feliz Viaje Web usan 8.5% (Tarifa Final)
+          profitRate = 0.085; 
         }
+
+        if (profitRate > 0) {
+          base = final / (1 + profitRate);
+          profit = final - base;
+        }
+        
+      } else if (provider === 'Web Adicional') {
+        // Monto ingresado es la tarifa final, se calcula la base a partir de la comisión.
+        const rates = {
+          'hotels': 0.06,      // 6%
+          'packages': 0.045,   // 4.5%
+          'cars': 0.05,        // 5%
+          'excursions': 0.05,  // 5%
+          'transfers': 0.05,   // 5%
+          'assistance': 0.15,  // 15%
+          'disney': 0.05,      // 5%
+          'universal': 0.05,   // 5%
+          'xcaret': 0.05,      // 5%
+        };
+        
+        profitRate = rates[service] || 0;
+        
+        if (profitRate > 0) {
+          // El monto ingresado (Final) contiene la comisión y los gastos administrativos
+          // final = base * (1 + profitRate) * (1 + ADMIN_RATE)
+          // profit = final - base - (base * ADMIN_RATE)
+          
+          // Calculamos la base descontando la comisión:
+          const amountWithoutProfit = final / (1 + profitRate);
+          
+          // Aplicamos gastos administrativos al monto sin comisión para obtener la base neta
+          base = amountWithoutProfit / (1 + ADMIN_RATE);
+          
+          // Recalculamos el final para que sea el monto ingresado (por si el cálculo de arriba fue muy complejo)
+          final = parseFloat(amount);
+          
+          // El Profit (Comisión) es la diferencia entre el total ingresado y la Base neta:
+          profit = final - base;
+          
+          // Nota: profitRate en este caso es solo la tasa de comisión (no incluye admin_rate en el porcentaje)
+        }
+        
         return { base: base, profit: profit, final: final, profitRate: profitRate };
       }
-    } else if (provider === 'Web Adicional') {
-      // Comisiones para Web Adicional según el servicio
-      const rates = {
-        'hotels': 0.06,      
-        'packages': 0.045,   
-        'cars': 0.05,        
-        'excursions': 0.05,  
-        'transfers': 0.05,   
-        'assistance': 0.15,  
-        'disney': 0.05,      
-        'universal': 0.05,   
-        'xcaret': 0.05,      
-        'flights': 0.05,     
-      };
       
-      profitRate = rates[service] || 0;
-      // El monto ingresado es el TOTAL (con comisión incluida)
-      base = final / (1 + profitRate);
-      profit = final - base;
-      
+      // Si el servicio no es 'Web Adicional' (solo 'Feliz Viaje Web' o default)
       return { base: base, profit: profit, final: final, profitRate: profitRate };
     }
-  }
 
-  // LÓGICA PARA AGENCIAS 
-  if (service === 'flights') {
-    if (calculationMode === 'quick' && flightType) {
-      if (flightType === 'internacional') {
-        profitRate = 0.12;
-      } else if (flightType === 'nacional') {
-        profitRate = 0.15;
+    // --- LÓGICA PARA AGENCIAS (CÓDIGO ORIGINAL SIN CAMBIOS) ---
+    if (service === 'flights') {
+      if (calculationMode === 'quick' && flightType) {
+        if (flightType === 'internacional') {
+          profitRate = 0.12;
+        } else if (flightType === 'nacional') {
+          profitRate = 0.15;
+        }
+      } else {
+        profitRate = 0.185;
       }
-    } else {
+    } else if (service === 'hotels') {
       profitRate = 0.185;
-    }
-  } else if (service === 'hotels') {
-    profitRate = 0.185;
-  } else if (service === 'assistance') {
-    profitRate = 0.30;
-  } else if (service === 'transfers') {
-    profitRate = 0.185;
-  } else if (service === 'cars') {
-    if (provider === 'BookingCars') {
-      base = parseFloat(amount) * 0.88;
-      final = parseFloat(amount);
-      profit = final - base;
-      profitRate = 0.12;
-    } else {
+    } else if (service === 'assistance') {
+      profitRate = 0.30;
+    } else if (service === 'transfers') {
       profitRate = 0.185;
-    }
-  } else if (service === 'packages') {
-    const rates = { 'Ola': 0.085, 'Julia': 0.09 };
-    profitRate = rates[provider] || 0;
-  } else if (service === 'cruises') {
-    profitRate = 0.035;
-    profit = base * profitRate;
-    final = base + profit;
-  } else if (service === 'excursions') {
-    profitRate = 0.185;
-  } else if (service === 'buspackages') {
-    const rates = { '360 Regional': 0.085, 'KMB': 0.035, 'RolSol': 0.12, 'Balloon': 0.12, 'Astros': 0.12, 'TuViaje': 0.085 };
-    profitRate = rates[provider] || 0;
-  } 
+    } else if (service === 'cars') {
+      if (provider === 'BookingCars') {
+        final = parseFloat(amount);
+        base = final * 0.88;
+        profit = final - base;
+        profitRate = 0.12;
+        return { base: base, profit: profit, final: final, profitRate: profitRate };
+      } else {
+        profitRate = 0.185;
+      }
+    } else if (service === 'packages') {
+      const rates = { 'Ola': 0.085, 'Julia': 0.09 };
+      profitRate = rates[provider] || 0;
+    } else if (service === 'cruises') {
+      profitRate = 0.035;
+      profit = base * profitRate;
+      final = base + profit;
+      return { base: base, profit: profit, final: final, profitRate: profitRate };
+    } else if (service === 'excursions') {
+      profitRate = 0.185;
+    } else if (service === 'buspackages') {
+      const rates = { '360 Regional': 0.085, 'KMB': 0.035, 'RolSol': 0.12, 'Balloon': 0.12, 'Astros': 0.12, 'TuViaje': 0.085 };
+      profitRate = rates[provider] || 0;
+    } 
 
-  if (service !== 'cars' || provider !== 'BookingCars') {
-    if (service !== 'cruises') {
-      profit = final * profitRate;
-      final = final + profit;
+    if (service !== 'cars' || provider !== 'BookingCars') {
+      if (service !== 'cruises') {
+        profit = final * profitRate;
+        final = final + profit;
+      }
     }
-  }
 
-  return { base: base, profit: profit, final: final, profitRate: profitRate };
-};
+    return { base: base, profit: profit, final: final, profitRate: profitRate };
+  };
 
   const handleStartBudget = () => {
     if (!budgetName.trim()) return;
@@ -202,23 +227,26 @@ const TravelCalculator = () => {
   };
 
   const handleAddService = () => {
-    const providerToUse = userType === 'freelancer' 
-      ? formData.provider 
-      : formData.provider;
+    const providerToUse = formData.provider;
     
     if (!formData.amount) return;
-    if (!providerToUse) return;
+    if (!providerToUse) {
+      alert('Debes seleccionar un proveedor.');
+      return;
+    }
     
-    if (mode === 'quick' && selectedService === 'flights' && !formData.flightType) {
-      if (mode === 'quick' && userType === 'agencia') {
-        alert('Debes seleccionar si el vuelo es Nacional o Internacional');
-        return;
-      }
-      if (userType === 'freelancer' && formData.provider === 'Feliz Viaje Web') {
-       alert('Debes seleccionar si el vuelo es Nacional o Internacional');
-       return;
-  }
-  }
+    // Validaciones de Vuelo para Agencia (Quick) y Freelancer (Feliz Viaje Web y Web Adicional)
+    const requiresFlightType = 
+      selectedService === 'flights' && (
+        (userType === 'agencia' && mode === 'quick') || 
+        (userType === 'freelancer' && (providerToUse === 'Feliz Viaje Web' || providerToUse === 'Web Adicional')) // ¡Ajuste aquí!
+      );
+
+    if (requiresFlightType && !formData.flightType) {
+      alert('Debes seleccionar si el vuelo es Nacional o Internacional');
+      return;
+    }
+    
     if (mode === 'budget') {
       const serviceCount = currentBudget.services.filter(s => s.type === selectedService).length;
       if (selectedService === 'assistance' && serviceCount >= 1) {
@@ -269,11 +297,12 @@ const TravelCalculator = () => {
       });
       
       setCurrentBudget({ ...currentBudget, services: renamedServices });
-      setFormData({});
+      setFormData({ provider: '', amount: '', flightType: '' });
       setSelectedService(null);
       setCurrency('USD');
     } else {
       setCalculatedServices([serviceData]);
+      setFormData({ provider: '', amount: '', flightType: '' });
     }
   };
 
@@ -341,7 +370,7 @@ const TravelCalculator = () => {
     setMode(null);
     setCurrentBudget(null);
     setSelectedService(null);
-    setFormData({});
+    setFormData({ provider: '', amount: '', flightType: '' });
     setCalculatedServices([]);
     setCurrency('USD');
     setViewingBudget(null);
@@ -376,7 +405,10 @@ const TravelCalculator = () => {
     }
   };
 
+  // --- RENDERING SECTIONS (LOGIN, MENU, ETC.) ---
+
   if (!selectedUserType) {
+    // ... (Selección Agencia/Freelancer)
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative' }}>
         <div style={{ maxWidth: '40rem', width: '100%' }}>
@@ -460,6 +492,7 @@ const TravelCalculator = () => {
   }
 
   if (!isLoggedIn) {
+    // ... (Login)
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative' }}>
         <div style={{ maxWidth: '28rem', width: '100%' }}>
@@ -534,6 +567,7 @@ const TravelCalculator = () => {
   }
 
   if (viewingBudget) {
+    // ... (Vista de Presupuesto)
     const activeServices = viewingBudget.services.filter(s => s.isActive !== false);
     const totalBaseUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.base, 0);
     const totalProfitUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + s.profit, 0);
@@ -560,7 +594,7 @@ const TravelCalculator = () => {
                   <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.75rem' }}>
                     <div>
                       <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
-                      {userType === 'agencia' && <p style={{ color: '#BDBFC1' }}>{service.provider}</p>}
+                      <p style={{ color: '#BDBFC1' }}>{service.provider}</p>
                       {service.type === 'flights' && service.flightType && (
                         <p style={{ color: '#56DDE0', fontSize: '0.875rem', fontWeight: '600' }}>
                           {service.flightType === 'nacional' ? 'Vuelo Nacional' : 'Vuelo Internacional'}
@@ -630,6 +664,7 @@ const TravelCalculator = () => {
   }
 
   if (!mode) {
+    // ... (Menú principal)
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
@@ -729,6 +764,7 @@ const TravelCalculator = () => {
   }
 
   if (mode === 'budget' && !currentBudget) {
+    // ... (Nuevo Presupuesto)
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
@@ -749,7 +785,33 @@ const TravelCalculator = () => {
   }
 
   if (mode === 'quick' && calculatedServices.length > 0) {
+    // ... (Resultado de cotización individual)
     const service = calculatedServices[0];
+    const isFreelancer = userType === 'freelancer';
+    const isWebAdicional = service.provider === 'Web Adicional' && isFreelancer;
+    
+    // Calcular el porcentaje real del profit sobre la base (para mostrar el % de comisión/rentabilidad)
+    let profitPercentage = service.profitRate * 100;
+    
+    if (isWebAdicional) {
+        // En Web Adicional, el profit incluye la comisión y el 3.5% de gastos administrativos.
+        // Queremos mostrar la tasa base de la comisión (la que él conoce, e.g., 6%, 4.5%).
+        const commissionRates = {
+          'flights': (service.type === 'flights' && service.flightType === 'nacional' ? 0.05 : 0.03), 
+          'hotels': 0.06,      
+          'packages': 0.045,   
+          'cars': 0.05,        
+          'excursions': 0.05,  
+          'transfers': 0.05,   
+          'assistance': 0.15,  
+          'disney': 0.05,      
+          'universal': 0.05,   
+          'xcaret': 0.05,      
+        };
+        profitPercentage = (commissionRates[service.type] || 0) * 100;
+    }
+
+
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
@@ -763,29 +825,17 @@ const TravelCalculator = () => {
                 <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Servicio:</span>
                 <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</span>
               </div>
-              {(userType === 'agencia' || userType === 'freelancer') && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
-                  <select 
-                    value={formData.provider || ''} 
-                    onChange={(e) => {
-                      setFormData({ ...formData, provider: e.target.value });
-                      if (selectedService === 'assistance' && e.target.value === 'AssisCard') {
-                        setCurrency('USD');
-                      }
-                    }} 
-                    style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {(userType === 'freelancer' ? providersFreelancer[selectedService] : providers[selectedService])?.map(provider => <option key={provider} value={provider}>{provider}</option>)}
-                  </select>
-                </div>
-              )}
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Proveedor:</span>
+                <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.provider}</span>
+              </div>
+              
               {service.type === 'flights' && service.flightType && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Tipo de Vuelo:</span>
                   <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
-                    {service.flightType === 'nacional' ? 'Nacional (15%)' : 'Internacional (12%)'}
+                    {service.flightType === 'nacional' ? 'Nacional' : 'Internacional'}
                   </span>
                 </div>
               )}
@@ -793,20 +843,42 @@ const TravelCalculator = () => {
                 <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Moneda:</span>
                 <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.currency === 'USD' ? 'Dólares (USD)' : 'Pesos Argentinos (ARS)'}</span>
               </div>
+              
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Base:</span>
-                <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{formatCurrency(service.base, service.currency)}</span>
+                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Precio Final (Ingresado):</span> 
+                <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
+                  {formatCurrency(service.final, service.currency)}
+                </span>
               </div>
+              
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Rentabilidad:</span>
+                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto (Base):</span>
+                <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
+                   {formatCurrency(service.base, service.currency)}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>
+                  {isFreelancer ? 
+                    `Comisión (${formatNumber(profitPercentage)}%)` : 
+                    `Rentabilidad (${formatNumber(service.profitRate * 100)}%)`}
+                :</span>
                 <span style={{ fontWeight: 'bold', color: '#56DDE0', fontSize: '1.125rem' }}>{formatCurrency(service.profit, service.currency)}</span>
               </div>
+              
+              {isWebAdicional && (
+                <p style={{ color: '#ef5a1a', fontSize: '0.875rem', fontWeight: '600', textAlign: 'center', border: '1px solid #ef5a1a', padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: 'rgba(239, 90, 26, 0.1)' }}>
+                  ⚠️ **NOTA:** Este cálculo incluye el 3.5% de gastos administrativos.
+                </p>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '1rem' }}>
-                <span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.5rem' }}>Precio Final:</span>
+                <span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.5rem' }}>Total Final:</span>
                 <span style={{ fontWeight: 'bold', fontSize: '2.5rem', color: '#ef5a1a' }}>{formatCurrency(service.final, service.currency)}</span>
               </div>
             </div>
-            <button onClick={() => { setCalculatedServices([]); setSelectedService(null); setFormData({}); setCurrency('USD'); }} style={{ width: '100%', background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', color: 'white', padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>Volver a Cotizar</button>
+            <button onClick={() => { setCalculatedServices([]); setSelectedService(null); setCurrency('USD'); }} style={{ width: '100%', background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', color: 'white', padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>Volver a Cotizar</button>
           </div>
         </div>
         <p style={{ position: 'absolute', bottom: '1rem', left: '50%', transform: 'translateX(-50%)', fontSize: '0.7rem', color: '#BDBFC1', opacity: 0.5 }}>
@@ -817,6 +889,7 @@ const TravelCalculator = () => {
   }
 
   if (!selectedService) {
+    // ... (Selección de servicio)
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
@@ -837,32 +910,23 @@ const TravelCalculator = () => {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem', maxWidth: '64rem', margin: '0 auto 3rem' }}>
             {services.filter(service => {
-              if (mode === 'quick') {
-                if (userType === 'freelancer') {
-                  // Mostrar servicios de freelancer y los generales
-                  if (service.agenciaOnly) return false;
-                  return true;
-                }
-                if (userType === 'agencia') {
-                  if (service.freelancerOnly) return false;
-                  return true;
-                }
+              if (userType === 'agencia') {
+                if (service.freelancerOnly) return false;
+                return mode === 'quick' ? true : !service.quickOnly;
               }
-              if (mode === 'budget') {
-                if (userType === 'freelancer') {
-                  if (service.agenciaOnly || service.quickOnly) return false;
-                  return true;
-                }
-                if (userType === 'agencia') {
-                  if (service.freelancerOnly || service.quickOnly) return false;
-                  return true;
-                }
+              if (userType === 'freelancer') {
+                if (service.agenciaOnly || service.quickOnly) return false;
+                return true;
               }
               return false;
             }).map(service => {
               const Icon = service.icon;
               return (
-                <div key={service.id} onClick={() => setSelectedService(service.id)} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', textAlign: 'center', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ef5a1a'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#f3f4f6'; }}>
+                <div key={service.id} onClick={() => {
+                  setSelectedService(service.id);
+                  setFormData({ provider: '', amount: '', flightType: '' });
+                }} 
+                style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', textAlign: 'center', transition: 'all 0.3s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ef5a1a'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#f3f4f6'; }}>
                   <div style={{ backgroundColor: '#f3f4f6', width: '4rem', height: '4rem', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                     <Icon color="#56DDE0" size={28} />
                   </div>
@@ -880,7 +944,7 @@ const TravelCalculator = () => {
                     <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', backgroundColor: service.isActive === false ? 'rgba(156, 163, 175, 0.15)' : 'rgba(86, 221, 224, 0.15)', borderRadius: '0.75rem', border: service.isActive === false ? '1px solid rgba(156, 163, 175, 0.3)' : '1px solid rgba(86, 221, 224, 0.3)', opacity: service.isActive === false ? 0.6 : 1 }}>
                       <div>
                         <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
-                        {userType === 'agencia' && <p style={{ color: '#BDBFC1' }}>{service.provider}</p>}
+                        <p style={{ color: '#BDBFC1' }}>{service.provider}</p>
                         {service.type === 'flights' && service.flightType && (
                           <p style={{ color: '#56DDE0', fontSize: '0.875rem', fontWeight: '600' }}>
                             {service.flightType === 'nacional' ? 'Vuelo Nacional' : 'Vuelo Internacional'}
@@ -1002,16 +1066,20 @@ const TravelCalculator = () => {
   }
 
   return (
+    // --- PANTALLA DE INGRESO DE MONTO Y PROVEEDOR ---
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
       <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
-        <button onClick={() => { setSelectedService(null); setFormData({}); }} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
+        <button onClick={() => { setSelectedService(null); setFormData({ provider: '', amount: '', flightType: '' }); }} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
         <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2.5rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem', textAlign: 'center' }}>{services.find(s => s.id === selectedService)?.name}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            
+            {/* SELECTOR DE MONEDA */}
             {selectedService !== 'buspackages' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Moneda</label>
-                {selectedService === 'assistance' && formData.provider === 'AssisCard' ? (
+                {/* Lógica para forzar USD en AssisCard (Agencia) */}
+                {userType === 'agencia' && selectedService === 'assistance' && formData.provider === 'AssisCard' ? (
                   <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>
                     USD ($) - AssisCard solo acepta dólares
                   </div>
@@ -1023,16 +1091,33 @@ const TravelCalculator = () => {
                 )}
               </div>
             )}
-            {(userType === 'agencia' || userType === 'freelancer') && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Proveedor:</span>
-                <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.provider}</span>
+            
+            {/* SELECTOR DE PROVEEDOR (OBLIGATORIO PARA AMBOS) */}
+            {(userType === 'agencia' || userType === 'freelancer') && currentProviders[selectedService] && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
+                <select 
+                  value={formData.provider || ''} 
+                  onChange={(e) => {
+                    const newProvider = e.target.value;
+                    setFormData({ ...formData, provider: newProvider, flightType: '' });
+                    
+                    if (userType === 'agencia' && selectedService === 'assistance' && newProvider === 'AssisCard') {
+                      setCurrency('USD');
+                    }
+                  }} 
+                  style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1rem', backgroundColor: 'white', cursor: 'pointer' }}
+                >
+                  <option value="">Seleccionar Proveedor...</option>
+                  {currentProviders[selectedService].map(provider => <option key={provider} value={provider}>{provider}</option>)}
+                </select>
               </div>
             )}
             
-            {selectedService === 'flights' && (
-              (mode === 'quick' && userType === 'agencia') || 
-              (userType === 'freelancer' && formData.provider === 'Feliz Viaje Web')
+            {/* SELECTOR TIPO DE VUELO (Aplica a Agencia Quick, Freelancer FVW y Freelancer Web Adicional) */}
+            {selectedService === 'flights' && formData.provider && (
+              (userType === 'agencia' && mode === 'quick') || 
+              (userType === 'freelancer' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional'))
             ) && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Tipo de Vuelo</label>
@@ -1085,30 +1170,47 @@ const TravelCalculator = () => {
               </div>
             )}
             
+            {/* INPUT DE MONTO BASE/FINAL */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Monto Base</label>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>
+                Monto {userType === 'freelancer' ? 'Final (con comisión)' : 'Base'}
+              </label>
               <input type="text" value={formData.amount || ''} onChange={handleAmountChange} placeholder="0,00" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
+              
+              {/* MENSAJE DE GASTOS ADMINISTRATIVOS */}
+              {userType === 'freelancer' && formData.provider === 'Web Adicional' && (
+                <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'center' }}>
+                  * El cálculo incluirá un **3.5%** por gastos administrativos.
+                </p>
+              )}
             </div>
            
+            {/* BOTÓN CALCULAR/AGREGAR */}
             <button 
               onClick={handleAddService} 
               disabled={
                 !formData.amount || 
                 !formData.provider ||
-                (selectedService === 'flights' && !formData.flightType && 
-                  ((mode === 'quick' && userType === 'agencia') || 
-                  (userType === 'freelancer' && formData.provider === 'Feliz Viaje Web')))
+                // Lógica de deshabilitación para vuelos
+                (selectedService === 'flights' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional') && userType === 'freelancer' && !formData.flightType) ||
+                (selectedService === 'flights' && mode === 'quick' && userType === 'agencia' && !formData.flightType)
               }
               style={{ 
                 width: '100%', 
-                background: (formData.amount && formData.provider && (selectedService !== 'flights'|| formData.flightType || (userType === 'freelancer' && formData.provider === 'Web Adicional') ||(userType === 'agencia' && mode === 'budget'))) ? 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', 
+                background: (formData.amount && formData.provider && 
+                  (selectedService !== 'flights' || formData.flightType || (userType === 'agencia' && mode === 'budget') || 
+                  (userType === 'freelancer' && selectedService !== 'flights'))) ? //Simplificación de la lógica para Freelancer no-vuelo
+                  'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)' : '#d1d5db', 
                 color: 'white', 
                 padding: '1.25rem', 
                 borderRadius: '0.75rem', 
                 fontWeight: 'bold', 
                 fontSize: '1.125rem', 
                 border: 'none', 
-                cursor: (formData.amount && formData.provider && (selectedService !== 'flights' || formData.flightType || (userType === 'freelancer' && formData.provider === 'Web Adicional') ||(userType === 'agencia' && mode === 'budget'))) ? 'pointer' : 'not-allowed',  
+                cursor: (formData.amount && formData.provider && 
+                  (selectedService !== 'flights' || formData.flightType || (userType === 'agencia' && mode === 'budget') ||
+                  (userType === 'freelancer' && selectedService !== 'flights'))) ? 
+                  'pointer' : 'not-allowed',  
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
