@@ -55,7 +55,7 @@ const TravelCalculator = () => {
     flights: ['Feliz Viaje Web', 'Web Adicional'],
     hotels: ['Feliz Viaje Web', 'Web Adicional'],
     transfers: ['Feliz Viaje Web', 'Web Adicional'],
-    cars: ['Feliz Viaje Web', 'Web Adicional'],
+    cars: ['Feliz Viaje Web', 'Web Adicional', 'BookingCars'],
     packages: ['Feliz Viaje Web', 'Web Adicional'],
     excursions: ['Feliz Viaje Web', 'Web Adicional'],
     assistance: ['Web Adicional'],
@@ -100,22 +100,29 @@ const TravelCalculator = () => {
     let profitRate = 0;
     let profit = 0;
     let base = parseFloat(amount);
+    let adminExpense = 0; // Nueva variable para guardar el gasto administrativo
 
     // --- LÓGICA PARA FREELANCERS ---
     if (userType === 'freelancer') {
       const ADMIN_RATE = 0.035; // 3.5% Gastos Administrativos
       
+      if (provider === 'BookingCars' && service === 'cars') {
+        // Nueva Lógica BookingCars Freelancer: 6% del monto ingresado
+        profitRate = 0.06;
+        profit = final * profitRate;
+        base = final - profit;
+        return { base, profit, final, profitRate, adminExpense };
+      }
+
       if (provider === 'Feliz Viaje Web' || (provider === 'Web Adicional' && service === 'flights')) {
-        // Vuelos FVW y Vuelos Web Adicional usan lógica de Vuelos 
-        
+        // Lógica existente de Vuelos/FVW...
         if (service === 'flights' && flightType) {
           if (flightType === 'nacional') {
-            profitRate = 0.05; // 5% comisión
+            profitRate = 0.05; 
           } else if (flightType === 'internacional') {
-            profitRate = 0.03; // 3% comisión
+            profitRate = 0.03; 
           }
         } else {
-          // Otros servicios de Feliz Viaje Web usan 8.5% (Tarifa Final)
           profitRate = 0.085; 
         }
 
@@ -125,55 +132,41 @@ const TravelCalculator = () => {
         }
         
       } else if (provider === 'Web Adicional') {
-        // Monto ingresado es la tarifa final, se calcula la base a partir de la comisión.
+        // Lógica Web Adicional con Gastos Administrativos
         const rates = {
-          'hotels': 0.06,      // 6%
-          'packages': 0.045,   // 4.5%
-          'cars': 0.05,        // 5%
-          'excursions': 0.05,  // 5%
-          'transfers': 0.05,   // 5%
-          'assistance': 0.15,  // 15%
-          'disney': 0.05,      // 5%
-          'universal': 0.05,   // 5%
-          'xcaret': 0.05,      // 5%
+          'hotels': 0.06, 'packages': 0.045, 'cars': 0.05, 'excursions': 0.05,
+          'transfers': 0.05, 'assistance': 0.15, 'disney': 0.05, 'universal': 0.05, 'xcaret': 0.05,
         };
         
         profitRate = rates[service] || 0;
         
         if (profitRate > 0) {
-          // El monto ingresado (Final) contiene la comisión y los gastos administrativos
-          // final = base * (1 + profitRate) * (1 + ADMIN_RATE)
-          // profit = final - base - (base * ADMIN_RATE)
-          
-          // Calculamos la base descontando la comisión:
+          // 1. Descontamos la comisión para obtener el "Monto con Admin"
           const amountWithoutProfit = final / (1 + profitRate);
           
-          // Aplicamos gastos administrativos al monto sin comisión para obtener la base neta
+          // 2. Descontamos el 3.5% administrativo para obtener la Base real
           base = amountWithoutProfit / (1 + ADMIN_RATE);
           
-          // Recalculamos el final para que sea el monto ingresado (por si el cálculo de arriba fue muy complejo)
+          // 3. Calculamos cuánto es ese gasto administrativo en dinero
+          adminExpense = amountWithoutProfit - base;
+          
           final = parseFloat(amount);
-          
-          // El Profit (Comisión) es la diferencia entre el total ingresado y la Base neta:
-          profit = final - base;
-          
-          // Nota: profitRate en este caso es solo la tasa de comisión (no incluye admin_rate en el porcentaje)
+          profit = final - amountWithoutProfit; // La ganancia es Final - (Base + Admin)
         }
         
-        return { base: base, profit: profit, final: final, profitRate: profitRate };
+        return { base, profit, final, profitRate, adminExpense }; // <--- Devolvemos adminExpense
       }
       
-      // Si el servicio no es 'Web Adicional' (solo 'Feliz Viaje Web' o default)
-      return { base: base, profit: profit, final: final, profitRate: profitRate };
+      return { base, profit, final, profitRate, adminExpense };
     }
 
-    // --- LÓGICA PARA AGENCIAS (CÓDIGO ORIGINAL SIN CAMBIOS) ---
+    // --- LÓGICA PARA AGENCIAS ---
     if (service === 'flights') {
       if (calculationMode === 'quick' && flightType) {
         if (flightType === 'internacional') {
-          profitRate = 0.12;
+          profitRate = 0.097; // <--- CAMBIO: 9.7%
         } else if (flightType === 'nacional') {
-          profitRate = 0.15;
+          profitRate = 0.117; // <--- CAMBIO: 11.7%
         }
       } else {
         profitRate = 0.185;
@@ -190,7 +183,7 @@ const TravelCalculator = () => {
         base = final * 0.88;
         profit = final - base;
         profitRate = 0.12;
-        return { base: base, profit: profit, final: final, profitRate: profitRate };
+        return { base, profit, final, profitRate, adminExpense };
       } else {
         profitRate = 0.185;
       }
@@ -201,7 +194,7 @@ const TravelCalculator = () => {
       profitRate = 0.035;
       profit = base * profitRate;
       final = base + profit;
-      return { base: base, profit: profit, final: final, profitRate: profitRate };
+      return { base, profit, final, profitRate, adminExpense };
     } else if (service === 'excursions') {
       profitRate = 0.185;
     } else if (service === 'buspackages') {
@@ -209,14 +202,12 @@ const TravelCalculator = () => {
       profitRate = rates[provider] || 0;
     } 
 
-    if (service !== 'cars' || provider !== 'BookingCars') {
-      if (service !== 'cruises') {
-        profit = final * profitRate;
-        final = final + profit;
-      }
+    if ((service !== 'cars' || provider !== 'BookingCars') && service !== 'cruises') {
+      profit = final * profitRate;
+      final = final + profit;
     }
 
-    return { base: base, profit: profit, final: final, profitRate: profitRate };
+    return { base, profit, final, profitRate, adminExpense };
   };
 
   const handleStartBudget = () => {
@@ -271,6 +262,7 @@ const TravelCalculator = () => {
       profit: calculation.profit,
       final: calculation.final,
       profitRate: calculation.profitRate,
+      adminExpense: calculation.adminExpense || 0,
       flightType: formData.flightType,
       isActive: true,
     };
@@ -354,15 +346,21 @@ const TravelCalculator = () => {
     const totalProfitARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
     const totalFinalARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
     
+    // Calcular total de gastos administrativos 
+    const totalAdminExpensesUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + (s.adminExpense || 0), 0);
+    const totalAdminExpensesARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + (s.adminExpense || 0), 0);
+    
     return { 
       totalBaseUSD, 
       totalProfitUSD, 
       totalFinalUSD, 
+      totalAdminExpensesUSD, 
       totalBaseARS, 
       totalProfitARS, 
       totalFinalARS, 
+      totalAdminExpensesARS, 
       hasUSD: totalBaseUSD > 0, 
-      hasARS: totalBaseARS > 0 
+      hasARS: totalBaseARS > 0
     };
   };
 
@@ -575,6 +573,9 @@ const TravelCalculator = () => {
     const totalBaseARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.base, 0);
     const totalProfitARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.profit, 0);
     const totalFinalARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + s.final, 0);
+    const totalAdminExpensesUSD = activeServices.filter(s => s.currency === 'USD').reduce((sum, s) => sum + (s.adminExpense || 0), 0);
+    const totalAdminExpensesARS = activeServices.filter(s => s.currency === 'ARS').reduce((sum, s) => sum + (s.adminExpense || 0), 0);
+    
     const hasUSD = totalBaseUSD > 0;
     const hasARS = totalBaseARS > 0;
 
@@ -614,7 +615,8 @@ const TravelCalculator = () => {
               {hasUSD && (
                 <div style={{ marginBottom: hasARS ? '2rem' : '0' }}>
                   <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>USD (Dólares)</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  {/* Cambiamos gridTemplateColumns a repeat(4, 1fr) si hay gastos, o lo dejamos dinámico */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
                     <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                       <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Monto Neto</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalBaseUSD)}</p>
@@ -623,6 +625,13 @@ const TravelCalculator = () => {
                       <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Rentabilidad</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalProfitUSD)}</p>
                     </div>
+                    {/* --- GASTOS ADMINISTRATIVOS USD --- */}
+                    {totalAdminExpensesUSD > 0 && (
+                      <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.4)' }}>
+                        <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gastos Adm. 3,5%</p>
+                        <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalAdminExpensesUSD)}</p>
+                      </div>
+                    )}
                     <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                       <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Final</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalFinalUSD)}</p>
@@ -633,7 +642,7 @@ const TravelCalculator = () => {
               {hasARS && (
                 <div>
                   <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>ARS (Pesos Argentinos)</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
                     <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                       <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Monto Neto</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalBaseARS)}</p>
@@ -642,6 +651,16 @@ const TravelCalculator = () => {
                       <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Rentabilidad</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalProfitARS)}</p>
                     </div>
+
+                     {/* --- GASTOS ADMINISTRATIVOS ARS --- */}
+                     {totalAdminExpensesARS > 0 && (
+                      <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.4)' }}>
+                        <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gastos Adm. 3,5%</p>
+                        <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalAdminExpensesARS)}</p>
+                      </div>
+                    )}
+                    {/* ----------------------------------------------- */}
+
                     <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                       <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Final</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(totalFinalARS)}</p>
@@ -1012,18 +1031,34 @@ const TravelCalculator = () => {
               {getSummary() && (
                 <div style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', borderRadius: '1.5rem', padding: '2.5rem', color: 'white' }}>
                   <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Resumen Final</h3>
+                  
+                  {/* --- SECCIÓN DÓLARES (USD) --- */}
                   {getSummary().hasUSD && (
                     <div style={{ marginBottom: getSummary().hasARS ? '2rem' : '0' }}>
                       <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>USD (Dólares)</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                        
+                        {/* Monto Neto */}
                         <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                           <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Monto Neto</p>
                           <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalBaseUSD)}</p>
                         </div>
+                        
+                        {/* Rentabilidad / Comisión */}
                         <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                           <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Rentabilidad</p>
                           <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalProfitUSD)}</p>
                         </div>
+
+                        {/* BLOQUE NUEVO: GASTOS ADMINISTRATIVOS USD */}
+                        {getSummary().totalAdminExpensesUSD > 0 && (
+                           <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.4)' }}>
+                              <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gastos Adm. 3,5%</p>
+                              <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalAdminExpensesUSD)}</p>
+                           </div>
+                        )}
+                        
+                        {/* Total Final */}
                         <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                           <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Final</p>
                           <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalFinalUSD)}</p>
@@ -1031,18 +1066,34 @@ const TravelCalculator = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* --- SECCIÓN PESOS (ARS) --- */}
                   {getSummary().hasARS && (
                     <div>
                       <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>ARS (Pesos Argentinos)</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                        
+                        {/* Monto Neto */}
                         <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                           <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Monto Neto</p>
                           <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalBaseARS)}</p>
                         </div>
+                        
+                        {/* Rentabilidad / Comisión */}
                         <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                           <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Rentabilidad</p>
                           <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalProfitARS)}</p>
                         </div>
+
+                        {/* BLOQUE NUEVO: GASTOS ADMINISTRATIVOS ARS */}
+                        {getSummary().totalAdminExpensesARS > 0 && (
+                           <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.4)' }}>
+                              <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gastos Adm. 3,5%</p>
+                              <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalAdminExpensesARS)}</p>
+                           </div>
+                        )}
+                        
+                        {/* Total Final */}
                         <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
                           <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Final</p>
                           <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalFinalARS)}</p>
@@ -1050,6 +1101,7 @@ const TravelCalculator = () => {
                       </div>
                     </div>
                   )}
+
                   <button onClick={handleSaveBudget} style={{ width: '100%', backgroundColor: 'white', color: '#ef5a1a', padding: '1.25rem', borderRadius: '1rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>
                     {editingBudget ? 'Guardar Cambios' : 'Guardar Presupuesto'}
                   </button>
