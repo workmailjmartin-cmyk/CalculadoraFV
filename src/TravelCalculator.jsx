@@ -100,7 +100,7 @@ const TravelCalculator = () => {
     let profitRate = 0;
     let profit = 0;
     let base = parseFloat(amount);
-    let adminExpense = 0; // Nueva variable para guardar el gasto administrativo
+    let adminExpense = 0; 
 
     // --- LÓGICA PARA FREELANCERS ---
     if (userType === 'freelancer') {
@@ -153,8 +153,6 @@ const TravelCalculator = () => {
           final = parseFloat(amount);
           profit = final - amountWithoutProfit; // La ganancia es Final - (Base + Admin)
         }
-        
-        return { base, profit, final, profitRate, adminExpense }; // <--- Devolvemos adminExpense
       }
       
       return { base, profit, final, profitRate, adminExpense };
