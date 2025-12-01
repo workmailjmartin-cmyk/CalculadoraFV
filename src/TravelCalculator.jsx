@@ -106,34 +106,40 @@ const TravelCalculator = () => {
     if (userType === 'freelancer') {
       const ADMIN_RATE = 0.035; // 3.5% Gastos Administrativos
       
+      // 1. Caso BookingCars (Auto) -> 6% Directo
       if (provider === 'BookingCars' && service === 'cars') {
-        // Nueva Lógica BookingCars Freelancer: 6% del monto ingresado
         profitRate = 0.06;
         profit = final * profitRate;
         base = final - profit;
         return { base, profit, final, profitRate, adminExpense };
       }
 
-      if (provider === 'Feliz Viaje Web' || (provider === 'Web Adicional' && service === 'flights')) {
-        // Lógica existente de Vuelos/FVW...
-        if (service === 'flights' && flightType) {
-          if (flightType === 'nacional') {
-            profitRate = 0.05; 
-          } else if (flightType === 'internacional') {
-            profitRate = 0.03; 
-          }
-        } else {
-          profitRate = 0.085; 
+      // 2. Caso Feliz Viaje Web (SOLO VUELOS de FVW)
+      // Quitamos "Web Adicional" de aquí para que baje al bloque correcto
+      if (provider === 'Feliz Viaje Web' && service === 'flights') {
+        if (flightType === 'nacional') {
+          profitRate = 0.05; 
+        } else if (flightType === 'internacional') {
+          profitRate = 0.03; 
         }
-
-        if (profitRate > 0) {
+        base = final / (1 + profitRate);
+        profit = final - base;
+        return { base, profit, final, profitRate, adminExpense };
+      } 
+      
+      // 3. Caso Feliz Viaje Web (Resto de servicios)
+      if (provider === 'Feliz Viaje Web') {
+          profitRate = 0.085; 
           base = final / (1 + profitRate);
           profit = final - base;
-        }
-        
-      } else if (provider === 'Web Adicional') {
-        // Lógica Web Adicional con Gastos Administrativos
+          return { base, profit, final, profitRate, adminExpense };
+      }
+
+      // 4. Caso Web Adicional (TODOS los servicios, incluidos Vuelos)
+      if (provider === 'Web Adicional') {
         const rates = {
+          // Agregamos lógica de vuelos aquí dentro
+          'flights': (flightType === 'nacional' ? 0.05 : 0.03),
           'hotels': 0.06, 'packages': 0.045, 'cars': 0.05, 'excursions': 0.05,
           'transfers': 0.05, 'assistance': 0.15, 'disney': 0.05, 'universal': 0.05, 'xcaret': 0.05,
         };
@@ -141,30 +147,30 @@ const TravelCalculator = () => {
         profitRate = rates[service] || 0;
         
         if (profitRate > 0) {
-          // 1. Descontamos la comisión para obtener el "Monto con Admin"
+          // A. Descontamos la comisión
           const amountWithoutProfit = final / (1 + profitRate);
           
-          // 2. Descontamos el 3.5% administrativo para obtener la Base real
+          // B. Descontamos el 3.5% administrativo
           base = amountWithoutProfit / (1 + ADMIN_RATE);
           
-          // 3. Calculamos cuánto es ese gasto administrativo en dinero
+          // C. Calculamos el valor del gasto en dinero
           adminExpense = amountWithoutProfit - base;
           
           final = parseFloat(amount);
-          profit = final - amountWithoutProfit; // La ganancia es Final - (Base + Admin)
+          profit = final - amountWithoutProfit; 
         }
       }
       
       return { base, profit, final, profitRate, adminExpense };
     }
 
-    // --- LÓGICA PARA AGENCIAS ---
+    // --- LÓGICA PARA AGENCIAS (Sin cambios) ---
     if (service === 'flights') {
       if (calculationMode === 'quick' && flightType) {
         if (flightType === 'internacional') {
-          profitRate = 0.097; // <--- CAMBIO: 9.7%
+          profitRate = 0.097;
         } else if (flightType === 'nacional') {
-          profitRate = 0.117; // <--- CAMBIO: 11.7%
+          profitRate = 0.117;
         }
       } else {
         profitRate = 0.185;
@@ -867,7 +873,14 @@ const TravelCalculator = () => {
                   {formatCurrency(service.final, service.currency)}
                 </span>
               </div>
-              
+              {service.adminExpense > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6', backgroundColor: 'rgba(239, 90, 26, 0.05)', borderRadius: '0.5rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>
+                  <span style={{ color: '#ef5a1a', fontSize: '1.125rem', fontWeight: '600' }}>Gastos Adm. (3.5%):</span>
+                  <span style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.125rem' }}>
+                      {formatCurrency(service.adminExpense, service.currency)}
+                  </span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
                 <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto (Base):</span>
                 <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
