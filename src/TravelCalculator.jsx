@@ -1200,7 +1200,7 @@ const TravelCalculator = () => {
                   >
                     <span>Nacional</span>
                     <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                      {userType === 'freelancer' ? '5% comisión' : '15% rentabilidad'}
+                      {userType === 'freelancer' ? '5% comisión' : '11,7% rentabilidad'}
                     </span>
                   </button>
                   <button 
@@ -1222,7 +1222,7 @@ const TravelCalculator = () => {
                   >
                     <span>Internacional</span>
                     <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                      {userType === 'freelancer' ? '3% comisión' : '12% rentabilidad'}
+                      {userType === 'freelancer' ? '3% comisión' : '9,7% rentabilidad'}
                     </span>
                   </button>
                 </div>
