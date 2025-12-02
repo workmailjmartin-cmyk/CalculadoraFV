@@ -138,7 +138,6 @@ const TravelCalculator = () => {
       // 4. Caso Web Adicional (TODOS los servicios, incluidos Vuelos)
       if (provider === 'Web Adicional') {
         const rates = {
-          // Agregamos lógica de vuelos aquí dentro
           'flights': (flightType === 'nacional' ? 0.05 : 0.03),
           'hotels': 0.06, 'packages': 0.045, 'cars': 0.05, 'excursions': 0.05,
           'transfers': 0.05, 'assistance': 0.15, 'disney': 0.05, 'universal': 0.05, 'xcaret': 0.05,
@@ -147,17 +146,14 @@ const TravelCalculator = () => {
         profitRate = rates[service] || 0;
         
         if (profitRate > 0) {
-          // A. Descontamos la comisión
-          const amountWithoutProfit = final / (1 + profitRate);
+          // A. Cálculo ESTÁNDAR (No tocamos los números reales)
+          // La base es simplemente el total descontando la comisión.
+          base = final / (1 + profitRate);
+          profit = final - base;
           
-          // B. Descontamos el 3.5% administrativo
-          base = amountWithoutProfit / (1 + ADMIN_RATE);
-          
-          // C. Calculamos el valor del gasto en dinero
-          adminExpense = amountWithoutProfit - base;
-          
-          final = parseFloat(amount);
-          profit = final - amountWithoutProfit; 
+          // B. Cálculo INFORMATIVO (No afecta a la base ni al profit)
+          // Calculamos el 3.5% sobre esa base neta para mostrarlo en pantalla.
+          adminExpense = base * 0.035; 
         }
       }
       
