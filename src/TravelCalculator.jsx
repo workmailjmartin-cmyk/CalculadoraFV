@@ -153,7 +153,7 @@ const TravelCalculator = () => {
           
           // B. Cálculo INFORMATIVO (No afecta a la base ni al profit)
           // Calculamos el 3.5% sobre esa base neta para mostrarlo en pantalla.
-          adminExpense = base * 0.035; 
+          adminExpense = final * 0.035; 
         }
       }
       
