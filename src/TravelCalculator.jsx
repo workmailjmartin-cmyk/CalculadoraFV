@@ -21,7 +21,7 @@ const TravelCalculator = () => {
 
   const PASSWORDS = {
     agencia: 'felizviaje2025',
-    freelancer: 'freelancer2025'
+    freelancer: 'freelancer2026'
   };
 
   const services = [
