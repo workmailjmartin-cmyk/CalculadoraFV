@@ -676,24 +676,155 @@ const TravelCalculator = () => {
             })}
           </div>
           
-          {/* Resumen del presupuesto si estamos en modo budget */}
+          {/* --- BLOQUE RESTAURADO DE RESUMEN DEL PRESUPUESTO --- */}
           {mode === 'budget' && currentBudget?.services.length > 0 && (
-             <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
-                <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6', marginBottom: '2rem' }}>
-                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Servicios del Presupuesto</h3>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {currentBudget.services.map(s => (
-                         <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', border: '1px solid #eee', borderRadius: '0.5rem' }}>
-                            <span>{s.typeName}</span>
-                            <div style={{display:'flex', gap:'0.5rem'}}>
-                               <button onClick={() => handleDeleteService(s.id)}><Trash2 size={16} /></button>
-                            </div>
-                         </div>
-                      ))}
-                   </div>
+            <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
+              
+              {/* LISTA DE SERVICIOS AGREGADOS */}
+              <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Servicios del Presupuesto</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {currentBudget.services.map(service => (
+                    <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', backgroundColor: service.isActive === false ? 'rgba(156, 163, 175, 0.15)' : 'rgba(86, 221, 224, 0.15)', borderRadius: '0.75rem', border: service.isActive === false ? '1px solid rgba(156, 163, 175, 0.3)' : '1px solid rgba(86, 221, 224, 0.3)', opacity: service.isActive === false ? 0.6 : 1 }}>
+                      
+                      {/* DATOS DEL ITEM */}
+                      <div>
+                        <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
+                        <p style={{ color: '#BDBFC1' }}>{service.provider}</p>
+                        {service.type === 'flights' && service.flightType && (
+                          <p style={{ color: '#56DDE0', fontSize: '0.875rem', fontWeight: '600' }}>
+                            {service.flightType === 'nacional' ? 'Vuelo Nacional' : 'Vuelo Internacional'}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* PRECIOS Y BOTONES */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.25rem' }}>{formatCurrency(service.final, service.currency)}</p>
+                          <p style={{ fontSize: '0.75rem', color: '#BDBFC1' }}>Base: {formatCurrency(service.base, service.currency)}</p>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleToggleService(service.id)} 
+                            style={{ 
+                              background: service.isActive === false ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '0.5rem', 
+                              padding: '0.5rem', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          >
+                            {service.isActive === false ? <Play size={18} /> : <Pause size={18} />}
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleDeleteService(service.id)} 
+                            style={{ 
+                              background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '0.5rem', 
+                              padding: '0.5rem', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <button onClick={handleSaveBudget} style={{ width: '100%', backgroundColor: '#ef5a1a', color: 'white', padding: '1.25rem', borderRadius: '1rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: 'pointer' }}>Guardar Presupuesto</button>
-             </div>
+              </div>
+
+              {/* TARJETA DE RESUMEN FINAL (USD/ARS) */}
+              {getSummary() && (
+                <div style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', borderRadius: '1.5rem', padding: '2.5rem', color: 'white' }}>
+                  <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Resumen Final</h3>
+                  
+                  {/* SECCIÓN DÓLARES (USD) */}
+                  {getSummary().hasUSD && (
+                    <div style={{ marginBottom: getSummary().hasARS ? '2rem' : '0' }}>
+                      <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>USD (Dólares)</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                        
+                        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
+                          <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Monto Neto</p>
+                          <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalBaseUSD)}</p>
+                        </div>
+                        
+                        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
+                          <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Rentabilidad</p>
+                          <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalProfitUSD)}</p>
+                        </div>
+
+                        {getSummary().totalAdminExpensesUSD > 0 && (
+                           <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.4)' }}>
+                              <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gastos Adm. 3,5%</p>
+                              <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalAdminExpensesUSD)}</p>
+                           </div>
+                        )}
+                        
+                        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
+                          <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Final</p>
+                          <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalFinalUSD)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SECCIÓN PESOS (ARS) */}
+                  {getSummary().hasARS && (
+                    <div>
+                      <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>ARS (Pesos Argentinos)</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                        
+                        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
+                          <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Monto Neto</p>
+                          <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalBaseARS)}</p>
+                        </div>
+                        
+                        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
+                          <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Rentabilidad</p>
+                          <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalProfitARS)}</p>
+                        </div>
+
+                        {getSummary().totalAdminExpensesARS > 0 && (
+                           <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.4)' }}>
+                              <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gastos Adm. 3,5%</p>
+                              <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalAdminExpensesARS)}</p>
+                           </div>
+                        )}
+                        
+                        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1.5rem' }}>
+                          <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Total Final</p>
+                          <p style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>${formatNumber(getSummary().totalFinalARS)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <button onClick={handleSaveBudget} style={{ width: '100%', backgroundColor: 'white', color: '#ef5a1a', padding: '1.25rem', borderRadius: '1rem', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>
+                    {editingBudget ? 'Guardar Cambios' : 'Guardar Presupuesto'}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </PageWrapper>
