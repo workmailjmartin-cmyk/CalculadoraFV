@@ -861,19 +861,50 @@ const TravelCalculator = () => {
                 </span>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>
-                  {isFreelancer ? 
-                    `Comisión (${formatNumber(profitPercentage)}%)` : 
-                    `Rentabilidad (${formatNumber(service.profitRate * 100)}%)`}
-                :</span>
-                <span style={{ fontWeight: 'bold', color: '#56DDE0', fontSize: '1.125rem' }}>{formatCurrency(service.profit, service.currency)}</span>
-              </div>
-                   
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '1rem' }}>
-                <span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.5rem' }}>Total Final:</span>
-                <span style={{ fontWeight: 'bold', fontSize: '2.5rem', color: '#ef5a1a' }}>{formatCurrency(service.final, service.currency)}</span>
-              </div>
+             {/* --- LÓGICA DIFERENCIADA DE VISUALIZACIÓN --- */}
+              
+              {isFreelancer ? (
+                /* CASO FREELANCER: Total pequeño, GANANCIA GRANDE */
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                    <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Total Final (Cobrado):</span>
+                    <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
+                      {formatCurrency(service.final, service.currency)}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '1rem', backgroundColor: 'rgba(86, 221, 224, 0.1)', borderRadius: '1rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                       <span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.25rem' }}>Tu Ganancia:</span>
+                       <span style={{ fontSize: '0.875rem', color: '#56DDE0', fontWeight: '600' }}>
+                         ({formatNumber(profitPercentage)}% comision)
+                       </span>
+                    </div>
+                    <span style={{ fontWeight: 'bold', fontSize: '2.5rem', color: '#56DDE0' }}>
+                      {formatCurrency(service.profit, service.currency)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                /* CASO AGENCIA: Rentabilidad pequeña, TOTAL GRANDE (Original) */
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
+                    <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>
+                      Rentabilidad ({formatNumber(service.profitRate * 100)}%):
+                    </span>
+                    <span style={{ fontWeight: 'bold', color: '#56DDE0', fontSize: '1.125rem' }}>
+                      {formatCurrency(service.profit, service.currency)}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '1rem' }}>
+                    <span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.5rem' }}>Total Final:</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '2.5rem', color: '#ef5a1a' }}>
+                      {formatCurrency(service.final, service.currency)}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
             <button onClick={() => { setCalculatedServices([]); setSelectedService(null); setCurrency('USD'); }} style={{ width: '100%', background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', color: 'white', padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>Volver a Cotizar</button>
           </div>
