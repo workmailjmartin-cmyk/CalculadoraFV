@@ -189,7 +189,6 @@ const TravelCalculator = () => {
     return { base, profit, final, profitRate, adminExpense };
   };
 
-  // ... (Funciones auxiliares sin cambios: handleStartBudget, handleAddService, etc.)
   const handleStartBudget = () => {
     if (!budgetName.trim()) return;
     const newBudget = { id: Date.now(), name: budgetName, date: new Date().toLocaleDateString(), services: [] };
@@ -353,18 +352,39 @@ const TravelCalculator = () => {
     }
   };
 
+  // --- COMPONENTE DE DISEÑO (WRAPPER) ---
+  // Este wrapper soluciona el centrado y el footer fijo sin scrollbars molestos
+  const PageWrapper = ({ children, centerContent = true }) => (
+    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: centerContent ? 'center' : 'flex-start', 
+        alignItems: 'center', 
+        padding: '2rem', 
+        width: '100%', 
+        boxSizing: 'border-box'
+      }}>
+        {children}
+      </div>
+      <div style={{ textAlign: 'center', padding: '1rem', color: '#BDBFC1', fontSize: '0.75rem', opacity: 0.8 }}>
+        Designed by Juan Pablo Martin
+      </div>
+    </div>
+  );
+
   // --- VISTAS DEL SISTEMA ---
 
   if (!selectedUserType) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative' }}>
+      <PageWrapper>
         <div style={{ maxWidth: '40rem', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '3rem' }}>
             <img src={logo} alt="Feliz Viaje" style={{ height: '120px', width: 'auto', maxWidth: '100%' }} />
           </div>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '3rem', textAlign: 'center' }}>Calculadora</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '32rem', margin: '0 auto' }}>
-            {/* Cards de selección Agencia/Freelancer */}
             <div onClick={() => setSelectedUserType('agencia')} style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem 2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', textAlign: 'center', transition: 'all 0.3s' }}>
               <div style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', width: '5rem', height: '5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 4px 6px rgba(239, 90, 26, 0.3)' }}><Home color="white" size={36} /></div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d' }}>Agencia</h3>
@@ -375,13 +395,13 @@ const TravelCalculator = () => {
             </div>
           </div>
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   if (!isLoggedIn) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative' }}>
+      <PageWrapper>
         <div style={{ maxWidth: '28rem', width: '100%' }}>
           <button onClick={() => setSelectedUserType(null)} style={{ marginBottom: '1rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>← Volver</button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
@@ -396,26 +416,47 @@ const TravelCalculator = () => {
             </div>
           </div>
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   if (viewingBudget) {
-    // ... Código de Vista de Presupuesto existente ...
-    // (Para no extender demasiado, asumo que este bloque estaba bien, lo mantengo simplificado para referencia o copiar del original si se necesita, pero aquí está el cierre correcto)
     return (
-       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem' }}>
-          <button onClick={() => setViewingBudget(null)}>← Volver</button>
-          <h2>{viewingBudget.name}</h2>
-          {/* Renderizado de budget... */}
-       </div>
+       <PageWrapper centerContent={false}>
+          <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%' }}>
+            <button onClick={() => setViewingBudget(null)} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+              <h3 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d' }}>{viewingBudget.name}</h3>
+              <p style={{ color: '#BDBFC1' }}>{viewingBudget.date}</p>
+            </div>
+            {/* ... lógica de visualización del presupuesto ... */}
+            <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
+              <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Todos los Servicios</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {viewingBudget.services.map(service => (
+                    <div key={service.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.75rem' }}>
+                      <div>
+                        <p style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>{service.typeName}</p>
+                        <p style={{ color: '#BDBFC1' }}>{service.provider}</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontWeight: 'bold', color: '#ef5a1a', fontSize: '1.25rem' }}>{formatCurrency(service.final, service.currency)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+       </PageWrapper>
     );
   }
 
   if (!mode) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
-        <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
+      <PageWrapper centerContent={false}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <div></div>
             <button onClick={handleLogout} style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', border: 'none', borderRadius: '0.75rem', padding: '0.75rem 1.5rem', cursor: 'pointer', fontWeight: '600', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><LogOut size={18} /> Salir</button>
@@ -426,16 +467,42 @@ const TravelCalculator = () => {
             <div onClick={() => setMode('budget')} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', transition: 'all 0.3s' }}><div style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', width: '5rem', height: '5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}><FileText color="white" size={36} /></div><h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1rem' }}>Paquete de Servicios</h2></div>
             <div onClick={() => setMode('quick')} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', cursor: 'pointer', border: '2px solid #f3f4f6', transition: 'all 0.3s' }}><div style={{ background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', width: '5rem', height: '5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}><Calculator color="white" size={36} /></div><h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1rem' }}>Servicio Individual</h2></div>
           </div>
-          {/* Lista de presupuestos... */}
+          
+          {/* Lista de presupuestos */}
+          {budgets.length > 0 && (
+            <div style={{ marginTop: '4rem', maxWidth: '64rem', margin: '4rem auto 0' }}>
+              <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem' }}>Presupuestos Guardados</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {budgets.map(budget => (
+                  <div key={budget.id} style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6', display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                      <h4 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d' }}>{budget.name}</h4>
+                      <p style={{ color: '#BDBFC1', fontSize: '0.875rem' }}>{budget.date}</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                       <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '0.875rem', color: '#BDBFC1' }}>Total</p>
+                        <p style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#ef5a1a' }}>${formatNumber(budget.services.filter(s => s.isActive !== false).reduce((sum, s) => sum + s.final, 0))}</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => setViewingBudget(budget)} style={{ background: 'linear-gradient(135deg, #56DDE0 0%, #4cc9d4 100%)', color: 'white', padding: '0.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}><Eye size={20} /></button>
+                        <button onClick={() => handleDeleteBudget(budget.id)} style={{ background: 'linear-gradient(135deg, #ef5a1a 0%, #ff7a3d 100%)', color: 'white', padding: '0.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}><Trash2 size={20} /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   if (mode === 'budget' && !currentBudget) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
-        <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
+      <PageWrapper>
+        <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%' }}>
           <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '3rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2.5rem', textAlign: 'center' }}>Nuevo Presupuesto</h2>
@@ -445,13 +512,10 @@ const TravelCalculator = () => {
             </div>
           </div>
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
-  // --- AQUI ESTABA EL ERROR: LOS BLOQUES IF TIENEN QUE ESTAR SEPARADOS ---
-
-  // 1. Bloque de RESULTADO
   if (mode === 'quick' && calculatedServices.length > 0) {
     const service = calculatedServices[0];
     const isFreelancer = userType === 'freelancer';
@@ -468,8 +532,8 @@ const TravelCalculator = () => {
     }
 
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
-        <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
+      <PageWrapper>
+        <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%' }}>
           <button onClick={() => { setCalculatedServices([]); setSelectedService(null); setCurrency('USD'); }} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Home size={20} /> Inicio
           </button>
@@ -507,7 +571,7 @@ const TravelCalculator = () => {
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                    <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto:</span>
+                    <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto (A pagar):</span>
                     <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
                        {formatCurrency(service.base, service.currency)}
                     </span>
@@ -564,15 +628,15 @@ const TravelCalculator = () => {
             <button onClick={() => { setCalculatedServices([]); setSelectedService(null); setCurrency('USD'); }} style={{ width: '100%', background: 'linear-gradient(135deg, #11173d 0%, #1a2456 100%)', color: 'white', padding: '1rem', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', marginTop: '2rem' }}>Volver a Cotizar</button>
           </div>
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   // 2. Bloque de SELECCIÓN DE SERVICIO (GRID)
   if (!selectedService) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
-        <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
+      <PageWrapper centerContent={false}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%' }}>
           <button onClick={resetAll} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
              {mode === 'budget' && (
@@ -618,7 +682,6 @@ const TravelCalculator = () => {
              <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
                 <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6', marginBottom: '2rem' }}>
                    <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Servicios del Presupuesto</h3>
-                   {/* Mapeo de servicios... (Simplificado, funciona igual que antes) */}
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       {currentBudget.services.map(s => (
                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', border: '1px solid #eee', borderRadius: '0.5rem' }}>
@@ -634,20 +697,19 @@ const TravelCalculator = () => {
              </div>
           )}
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
-  // 3. Bloque Final: FORMULARIO DE CARGA (Si llegamos aquí es porque hay un selectedService)
+  // 3. Bloque Final: FORMULARIO DE CARGA
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
-      <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
+    <PageWrapper>
+      <div style={{ maxWidth: '48rem', margin: '0 auto', width: '100%' }}>
         <button onClick={() => { setSelectedService(null); setFormData({ provider: '', amount: '', flightType: '' }); }} style={{ marginBottom: '2rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>← Volver</button>
         <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2.5rem', boxShadow: '0 20px 25px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6' }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#11173d', marginBottom: '2rem', textAlign: 'center' }}>{services.find(s => s.id === selectedService)?.name}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
-            {/* SELECTOR DE MONEDA */}
             {selectedService !== 'buspackages' && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Moneda</label>
@@ -664,7 +726,6 @@ const TravelCalculator = () => {
               </div>
             )}
             
-            {/* SELECTOR DE PROVEEDOR */}
             {(userType === 'agencia' || userType === 'freelancer') && currentProviders[selectedService] && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>Proveedor</label>
@@ -683,7 +744,6 @@ const TravelCalculator = () => {
               </div>
             )}
             
-            {/* SELECTOR TIPO DE VUELO */}
             {selectedService === 'flights' && formData.provider && (
               (userType === 'agencia' && mode === 'quick') || 
               (userType === 'freelancer' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional'))
@@ -697,7 +757,6 @@ const TravelCalculator = () => {
               </div>
             )}
             
-            {/* INPUT DE MONTO */}
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 'bold', color: '#11173d', marginBottom: '0.75rem' }}>
                 Monto {userType === 'freelancer' ? 'Final (con comisión)' : 'Base'}
@@ -705,7 +764,6 @@ const TravelCalculator = () => {
               <input type="text" value={formData.amount || ''} onChange={handleAmountChange} placeholder="0,00" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
             </div>
            
-            {/* BOTÓN CALCULAR */}
             <button 
               onClick={handleAddService} 
               disabled={!formData.amount || !formData.provider || (selectedService === 'flights' && (formData.provider === 'Feliz Viaje Web' || formData.provider === 'Web Adicional') && userType === 'freelancer' && !formData.flightType) || (selectedService === 'flights' && mode === 'quick' && userType === 'agencia' && !formData.flightType)}
@@ -716,9 +774,8 @@ const TravelCalculator = () => {
             </button>
           </div>
         </div>
-      </div>
-      <p style={{ position: 'absolute', bottom: '1rem', left: '50%', transform: 'translateX(-50%)', fontSize: '0.7rem', color: '#BDBFC1', opacity: 0.5 }}>Designed by Juan Pablo Martin</p>
-    </div>
+      </PageWrapper>
+    );
   );
 };
 
