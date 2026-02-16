@@ -2,6 +2,28 @@ import React, { useState } from 'react';
 import { Plane, Hotel, Ship, Shield, Car, Plus, FileText, Calculator, MapPin, Home, Trash2, Eye, Package, LogOut, Compass, Edit, Pause, Play } from 'lucide-react';
 import logo from "./assets/logo.jpg";
 
+// --- COMPONENTE DE DISEÑO (WRAPPER) ---
+// SE DEBE DEFINIR AFUERA PARA EVITAR EL RE-RENDER QUE QUITA EL FOCO
+const PageWrapper = ({ children, centerContent = true }) => (
+  <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ 
+      flex: 1, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      justifyContent: centerContent ? 'center' : 'flex-start', 
+      alignItems: 'center', 
+      padding: '2rem', 
+      width: '100%', 
+      boxSizing: 'border-box'
+    }}>
+      {children}
+    </div>
+    <div style={{ textAlign: 'center', padding: '1rem', color: '#BDBFC1', fontSize: '0.75rem', opacity: 0.8 }}>
+      Designed by Juan Pablo Martin
+    </div>
+  </div>
+);
+
 const TravelCalculator = () => {
   const [mode, setMode] = useState(null);
   const [budgetName, setBudgetName] = useState('');
@@ -351,28 +373,6 @@ const TravelCalculator = () => {
       setLoginPassword('');
     }
   };
-
-  // --- COMPONENTE DE DISEÑO (WRAPPER) ---
-  // Este wrapper soluciona el centrado, el scroll fantasma y el footer fijo
-  const PageWrapper = ({ children, centerContent = true }) => (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: centerContent ? 'center' : 'flex-start', 
-        alignItems: 'center', 
-        padding: '2rem', 
-        width: '100%', 
-        boxSizing: 'border-box'
-      }}>
-        {children}
-      </div>
-      <div style={{ textAlign: 'center', padding: '1rem', color: '#BDBFC1', fontSize: '0.75rem', opacity: 0.8 }}>
-        Designed by Juan Pablo Martin
-      </div>
-    </div>
-  );
 
   // --- VISTAS DEL SISTEMA ---
 
