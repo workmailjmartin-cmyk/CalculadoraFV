@@ -150,10 +150,6 @@ const TravelCalculator = () => {
           // La base es simplemente el total descontando la comisión.
           base = final / (1 + profitRate);
           profit = final - base;
-          
-          // B. Cálculo INFORMATIVO (No afecta a la base ni al profit)
-          // Calculamos el 3.5% sobre esa base neta para mostrarlo en pantalla.
-          adminExpense = final * 0.035; 
         }
       }
       
@@ -812,25 +808,6 @@ const TravelCalculator = () => {
     // Calcular el porcentaje real del profit sobre la base (para mostrar el % de comisión/rentabilidad)
     let profitPercentage = service.profitRate * 100;
     
-    if (isWebAdicional) {
-        // En Web Adicional, el profit incluye la comisión y el 3.5% de gastos administrativos.
-        // Queremos mostrar la tasa base de la comisión (la que él conoce, e.g., 6%, 4.5%).
-        const commissionRates = {
-          'flights': (service.type === 'flights' && service.flightType === 'nacional' ? 0.05 : 0.03), 
-          'hotels': 0.06,      
-          'packages': 0.045,   
-          'cars': 0.05,        
-          'excursions': 0.05,  
-          'transfers': 0.05,   
-          'assistance': 0.15,  
-          'disney': 0.05,      
-          'universal': 0.05,   
-          'xcaret': 0.05,      
-        };
-        profitPercentage = (commissionRates[service.type] || 0) * 100;
-    }
-
-
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', padding: '2rem', position: 'relative', paddingBottom: '3rem' }}>
         <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
@@ -892,13 +869,7 @@ const TravelCalculator = () => {
                 :</span>
                 <span style={{ fontWeight: 'bold', color: '#56DDE0', fontSize: '1.125rem' }}>{formatCurrency(service.profit, service.currency)}</span>
               </div>
-              
-              {isWebAdicional && (
-                <p style={{ color: '#ef5a1a', fontSize: '0.875rem', fontWeight: '600', textAlign: 'center', border: '1px solid #ef5a1a', padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: 'rgba(239, 90, 26, 0.1)' }}>
-                  ⚠️ **NOTA:** Este cálculo incluye el 3.5% de gastos administrativos.
-                </p>
-              )}
-
+                   
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '1rem' }}>
                 <span style={{ color: '#11173d', fontWeight: 'bold', fontSize: '1.5rem' }}>Total Final:</span>
                 <span style={{ fontWeight: 'bold', fontSize: '2.5rem', color: '#ef5a1a' }}>{formatCurrency(service.final, service.currency)}</span>
@@ -1236,12 +1207,6 @@ const TravelCalculator = () => {
               </label>
               <input type="text" value={formData.amount || ''} onChange={handleAmountChange} placeholder="0,00" style={{ width: '100%', padding: '1rem 1.25rem', borderRadius: '0.75rem', border: '2px solid #e5e7eb', outline: 'none', color: '#11173d', fontWeight: '600', fontSize: '1.125rem', boxSizing: 'border-box' }} />
               
-              {/* MENSAJE DE GASTOS ADMINISTRATIVOS */}
-              {userType === 'freelancer' && formData.provider === 'Web Adicional' && (
-                <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'center' }}>
-                  * El cálculo incluirá un **3.5%** por gastos administrativos.
-                </p>
-              )}
             </div>
            
             {/* BOTÓN CALCULAR/AGREGAR */}
