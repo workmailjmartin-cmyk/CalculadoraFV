@@ -353,7 +353,7 @@ const TravelCalculator = () => {
   };
 
   // --- COMPONENTE DE DISEÑO (WRAPPER) ---
-  // Este wrapper soluciona el centrado y el footer fijo sin scrollbars molestos
+  // Este wrapper soluciona el centrado, el scroll fantasma y el footer fijo
   const PageWrapper = ({ children, centerContent = true }) => (
     <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
       <div style={{ 
@@ -429,7 +429,6 @@ const TravelCalculator = () => {
               <h3 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#11173d' }}>{viewingBudget.name}</h3>
               <p style={{ color: '#BDBFC1' }}>{viewingBudget.date}</p>
             </div>
-            {/* ... lógica de visualización del presupuesto ... */}
             <div style={{ maxWidth: '64rem', margin: '0 auto' }}>
               <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #f3f4f6', marginBottom: '2rem' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#11173d', marginBottom: '1.5rem' }}>Todos los Servicios</h3>
@@ -774,8 +773,8 @@ const TravelCalculator = () => {
             </button>
           </div>
         </div>
-      </PageWrapper>
-    );
+      </div>
+    </PageWrapper>
   );
 };
 
