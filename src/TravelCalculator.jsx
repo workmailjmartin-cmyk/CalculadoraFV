@@ -507,7 +507,7 @@ const TravelCalculator = () => {
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid #f3f4f6' }}>
-                    <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto (A pagar):</span>
+                    <span style={{ color: '#BDBFC1', fontSize: '1.125rem' }}>Monto Neto:</span>
                     <span style={{ fontWeight: 'bold', color: '#11173d', fontSize: '1.125rem' }}>
                        {formatCurrency(service.base, service.currency)}
                     </span>
